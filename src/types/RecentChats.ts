@@ -6,6 +6,8 @@ export interface RecentChat {
   lastMessage: string;
   lastMessageRecivedAt: string;
   noOfUnseenMessages: number;
+  isOnline: boolean;
+  lastSeenTimestamp: string;
 }
 
 export interface RecentChatGroups {

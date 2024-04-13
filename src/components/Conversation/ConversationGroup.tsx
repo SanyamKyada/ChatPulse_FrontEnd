@@ -7,7 +7,10 @@ const ConversationGroup: FC<{
   date: string;
   conversations: Conversation[];
 }> = ({ date, conversations }) => {
-  console.log("ConversationGroup");
+  console.log(
+    "    └────%cConversationGroup",
+    "color: #dc3545; font-weight: bold"
+  );
   const groupConsecutiveItems = (conversations: Conversation[]) => {
     const groupedConversations: Conversation[][] = [];
     let currentGroup: Conversation[] = [];

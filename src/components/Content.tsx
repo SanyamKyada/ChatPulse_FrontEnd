@@ -11,19 +11,15 @@ import { getGroupTitleFromDate } from "../util/datetime";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
-// const userId = sessionStorage.getItem("userId");
 
 const Content: React.FC = () => {
   const [conversationId, setConversationId] = useState<number | undefined>(
     undefined
   );
-  // const [conversations, setConversations] = useState<RecentChatAPIResponse>([]);
+
   const [recentChatGroups, setRecentChatGroups] = useState<RecentChatGroups>(
     {}
   );
-  // const [conversationGroups, setConversationGroups] = useState<{
-  //   [key: number]: ConversationGroups;
-  // }>({});
 
   const SetConversationId = (conversationId) => {
     setConversationId(conversationId);
@@ -66,6 +62,8 @@ const Content: React.FC = () => {
             minute: "2-digit",
           }),
           noOfUnseenMessages: conversation.numberOfUnseenMessages,
+          isOnline: conversation.contact.isOnline,
+          lastSeenTimestamp: conversation.contact.lastSeenTimestamp,
         });
         return groups;
       }, {});
@@ -74,57 +72,15 @@ const Content: React.FC = () => {
     fetchConversations();
   }, []);
 
-  // useEffect(() => {
-  //   const fetchConversationMessages = async () => {
-  //     try {
-  //       const response = await axios.get(
-  //         `https://localhost:7003/api/conversation/${conversationId}/messages?userId=${userId}&skip=0&take=20`
-  //       );
-  //       const messageGroups = formatConversationMessages(response.data);
-  //       let updatedMessages = { ...conversationGroups };
-  //       if (conversationId) {
-  //         updatedMessages[conversationId] = messageGroups;
-  //       }
-  //       setConversationGroups(updatedMessages);
-  //     } catch (error) {
-  //       console.error("Error fetching conversation messages:", error);
-  //     }
-  //   };
-
-  //   if (conversationId && !conversationGroups[conversationId])
-  //     fetchConversationMessages();
-  // }, [conversationId]);
-
-  // const formatConversationMessages = (messages: any[]): ConversationGroups => {
-  //   const groups: ConversationGroups = {};
-
-  //   messages.forEach((message) => {
-  //     const groupKey = getGroupTitleFromDate(message.timestamp);
-  //     if (!groups[groupKey]) {
-  //       groups[groupKey] = [];
-  //     }
-
-  //     groups[groupKey].push({
-  //       id: `conversation-${message.messageId}`,
-  //       isMe: message.isFromCurrentUser,
-  //       imageURL: CONTACT_IMAGE,
-  //       message: message.content,
-  //       time: new Date(message.timestamp).toLocaleTimeString([], {
-  //         hour: "2-digit",
-  //         minute: "2-digit",
-  //       }),
-  //     });
-  //   });
-
-  //   return groups;
-  // };
-  let contactId, contactName;
+  let contactId, contactName, contactOnlineStatus, lastSeenTimestamp;
   if (conversationId && Object.keys(recentChatGroups).length) {
     const conversation = Object.values(recentChatGroups)
       .flat()
       .find((x) => x.conversationId == conversationId);
     contactId = conversation?.contactId;
     contactName = conversation?.personName;
+    contactOnlineStatus = conversation?.isOnline;
+    lastSeenTimestamp = conversation?.lastSeenTimestamp;
   }
 
   return (
@@ -133,18 +89,15 @@ const Content: React.FC = () => {
         recentChatGroups={recentChatGroups}
         OnSelectConversation={SetConversationId}
       />
-      {/* Object.keys(conversationGroups).length > 0 ? (*/}
+
       {conversationId ? (
         <ConversationMain
           activeConversationId={conversationId}
+          onlineStatus={contactOnlineStatus}
           contactId={contactId}
           contactName={contactName}
+          lastSeenTimestamp={lastSeenTimestamp}
           handleBackNavigation={SetConversationId}
-          // contactId={}
-          // handleMessageSend={setNewMessage}
-          // conversationGroups={
-          //   (conversationId && conversationGroups[conversationId]) || {}
-          // }
         />
       ) : (
         <div className="conversation conversation-default active">

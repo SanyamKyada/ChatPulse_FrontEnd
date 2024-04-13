@@ -14,6 +14,8 @@ interface Contact {
   contactId: string;
   name: string;
   profileImage: string | null;
+  isOnline: boolean;
+  lastSeenTimestamp: string;
 }
 
 interface LastMessage {

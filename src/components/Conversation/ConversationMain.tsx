@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ConversationGroup from "./ConversationGroup";
 import { ConversationGroups } from "../../types/Conversation";
 import ConversationForm from "./ConversationForm";
-import { getGroupTitleFromDate } from "../../util/datetime";
+import { formatLastActivity, getGroupTitleFromDate } from "../../util/datetime";
 import axios from "axios";
 import { receiveMessage, sendMessage } from "../../Services/SignalRService";
 
@@ -13,28 +13,23 @@ type ConversationMainProps = {
   activeConversationId: number | undefined;
   contactId: string;
   contactName: string;
+  onlineStatus: boolean;
+  lastSeenTimestamp: string;
   handleBackNavigation: (p) => void;
-  // handleMessageSend: (msg: any) => void;
-  // conversationGroups: ConversationGroups;
 };
 
 const ConversationMain: React.FC<ConversationMainProps> = ({
   activeConversationId,
   contactId,
   contactName,
+  onlineStatus,
+  lastSeenTimestamp,
   handleBackNavigation,
-  // handleMessageSend,
-  // conversationGroups,
 }) => {
-  console.log("ConversationMain");
+  console.log("%cConversationMain", "font-weight: bold; color: #dc3545; ");
   const chatWindowRef = useRef<HTMLDivElement>(null);
-  const [conversationDictionary, setConversationGroups] = useState<{
-    [key: number]: ConversationGroups;
-  }>({});
+  const [messages, setMessages] = useState<ConversationGroups>({});
   const [isDataFetched, setIsDataFetched] = useState<boolean>(false);
-
-  const activeConversationMessages =
-    activeConversationId && conversationDictionary[activeConversationId];
 
   useEffect(() => {
     const fetchConversationMessages = async () => {
@@ -44,19 +39,14 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
           `https://localhost:7003/api/conversation/${activeConversationId}/messages?userId=${userId}&skip=0&take=20`
         );
         const messageGroups = formatConversationMessages(response.data);
-        let updatedMessages = { ...conversationDictionary };
-        if (activeConversationId) {
-          updatedMessages[activeConversationId] = messageGroups;
-        }
-        setConversationGroups(updatedMessages);
+        setMessages(messageGroups);
         setIsDataFetched(true);
       } catch (error) {
         console.error("Error fetching conversation messages:", error);
       }
     };
 
-    if (activeConversationId && !conversationDictionary[activeConversationId])
-      fetchConversationMessages();
+    if (activeConversationId) fetchConversationMessages();
   }, [activeConversationId]);
 
   const formatConversationMessages = (messages: any[]): ConversationGroups => {
@@ -84,33 +74,29 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   };
 
   const setNewMessage = (message, isMe = false) => {
-    setConversationGroups((currentState) => {
+    setMessages((currentState) => {
       const updatedMessages = { ...currentState };
-      if (activeConversationId) {
-        const msgObject = {
-          id: `conversation-${123}`,
-          isMe: isMe,
-          imageURL: CONTACT_IMAGE,
-          message: message,
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        };
-        updatedMessages[activeConversationId]["Today"] = [
-          ...(updatedMessages[activeConversationId]["Today"] || []),
-          msgObject,
-        ];
-      }
+      const msgObject = {
+        id: `conversation-${123}`,
+        isMe: isMe,
+        imageURL: CONTACT_IMAGE,
+        message: message,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      updatedMessages["Today"] = [
+        ...(updatedMessages["Today"] || []),
+        msgObject,
+      ];
       return updatedMessages;
     });
   };
 
-  const keys =
-    activeConversationMessages && Object.keys(activeConversationMessages);
+  const keys = messages && Object.keys(messages);
   const lastKey = keys && keys[keys.length - 1];
-  const todayMessages =
-    lastKey && lastKey === "Today" ? activeConversationMessages[lastKey] : [];
+  const todayMessages = lastKey && lastKey === "Today" ? messages[lastKey] : [];
 
   useEffect(() => {
     if (chatWindowRef.current) {
@@ -147,7 +133,13 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
           />
           <div>
             <div className="conversation-user-name">{contactName}</div>
-            <div className="conversation-user-status online">online</div>
+            <div
+              className={`conversation-user-status ${
+                onlineStatus ? "online" : "offline"
+              }`}
+            >
+              {onlineStatus ? "online" : formatLastActivity(lastSeenTimestamp)}
+            </div>
           </div>
         </div>
         <div className="conversation-buttons">
@@ -163,16 +155,14 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
         </div>
       </div>
       <div className="conversation-main" ref={chatWindowRef}>
-        {activeConversationMessages &&
-          Object.entries(activeConversationMessages).map(
-            ([date, conversations]) => (
-              <ConversationGroup
-                key={date}
-                date={date}
-                conversations={conversations}
-              />
-            )
-          )}
+        {messages &&
+          Object.entries(messages).map(([date, conversations]) => (
+            <ConversationGroup
+              key={date}
+              date={date}
+              conversations={conversations}
+            />
+          ))}
       </div>
       <ConversationForm
         activeConversationId={activeConversationId}

@@ -48,7 +48,10 @@ export const startConnection = async () => {
     await hubConnection?.start().catch(function (e) {
       debugger;
     });
-    console.log("SignalR Connected!");
+    console.log(
+      "%cSignalR Connected!",
+      "line-height: 1.5; font-weight: bold; color: #28a745;"
+    );
   } catch (err) {
     debugger;
     console.error("Error while establishing SignalR connection:", err);
@@ -68,8 +71,8 @@ export const sendMessage = async (receiverUserId, message) => {
     console.error("Error while sending message:", err);
     if (isTokenExpired()) {
       await refreshAccessToken();
-      await startConnection();
     }
+    await startConnection();
   }
 };
 

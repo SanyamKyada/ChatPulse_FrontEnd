@@ -4,7 +4,10 @@ const ConversationForm: React.FC<{
   activeConversationId: number | undefined;
   handleMessageSend: (msg) => void;
 }> = ({ activeConversationId, handleMessageSend }) => {
-  console.log("ConversationForm");
+  console.log(
+    "    └────%cConversationForm",
+    "color: #dc3545; font-weight: bold"
+  );
   const [message, setMessage] = useState<string>("");
   const messageRef = useRef<HTMLTextAreaElement>(null);
 
