@@ -8,6 +8,7 @@ import {
 } from "../types/Conversation";
 import { RecentChatGroups } from "../types/RecentChats";
 import { getGroupTitleFromDate } from "../util/datetime";
+import { handleContactStatusChange } from "../Services/SignalRService";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -70,6 +71,31 @@ const Content: React.FC = () => {
     };
 
     fetchConversations();
+
+    const isLoggedIn = sessionStorage.getItem("access_token");
+    if (isLoggedIn) {
+      handleContactStatusChange((userId, isOnline) => {
+        setRecentChatGroups((prevChats) => {
+          const updatedChats: RecentChatGroups = JSON.parse(
+            JSON.stringify(prevChats)
+          );
+          Object.entries(updatedChats).forEach(([key, value]) => {
+            updatedChats[key] = value.map((obj) => {
+              if (obj.contactId === userId) {
+                return {
+                  ...obj,
+                  isOnline: isOnline,
+                  lastSeenTimestamp: new Date().toLocaleString(),
+                };
+              }
+              return obj;
+            });
+          });
+          console.log(updatedChats);
+          return updatedChats;
+        });
+      });
+    }
   }, []);
 
   let contactId, contactName, contactOnlineStatus, lastSeenTimestamp;

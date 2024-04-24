@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import ConversationGroup from "./ConversationGroup";
 import { ConversationGroups } from "../../types/Conversation";
 import ConversationForm from "./ConversationForm";
-import { formatLastActivity, getGroupTitleFromDate } from "../../util/datetime";
+import { getGroupTitleFromDate } from "../../util/datetime";
 import axios from "axios";
 import { receiveMessage, sendMessage } from "../../Services/SignalRService";
+import ConversationHeader from "./ConversationHeader";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -29,7 +30,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   console.log("%cConversationMain", "font-weight: bold; color: #dc3545; ");
   const chatWindowRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ConversationGroups>({});
-  const [isDataFetched, setIsDataFetched] = useState<boolean>(false);
+  const [toggleScroll, setToggleScroll] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchConversationMessages = async () => {
@@ -40,7 +41,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
         );
         const messageGroups = formatConversationMessages(response.data);
         setMessages(messageGroups);
-        setIsDataFetched(true);
+        setToggleScroll((prev) => !prev);
       } catch (error) {
         console.error("Error fetching conversation messages:", error);
       }
@@ -102,7 +103,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
     if (chatWindowRef.current) {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
-  }, [isDataFetched, activeConversationId, todayMessages?.length]);
+  }, [toggleScroll, activeConversationId, todayMessages?.length]);
 
   const handleSendMessage = (message) => {
     setNewMessage(message, true);
@@ -117,43 +118,12 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
 
   return (
     <div className="conversation active" id="conversation-1">
-      <div className="conversation-top">
-        <button
-          type="button"
-          className="conversation-back"
-          onClick={() => handleBackNavigation(undefined)}
-        >
-          <i className="ri-arrow-left-line"></i>
-        </button>
-        <div className="conversation-user">
-          <img
-            className="conversation-user-image"
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60"
-            alt=""
-          />
-          <div>
-            <div className="conversation-user-name">{contactName}</div>
-            <div
-              className={`conversation-user-status ${
-                onlineStatus ? "online" : "offline"
-              }`}
-            >
-              {onlineStatus ? "online" : formatLastActivity(lastSeenTimestamp)}
-            </div>
-          </div>
-        </div>
-        <div className="conversation-buttons">
-          <button type="button">
-            <i className="ri-phone-fill"></i>
-          </button>
-          <button type="button">
-            <i className="ri-vidicon-line"></i>
-          </button>
-          <button type="button">
-            <i className="ri-information-line"></i>
-          </button>
-        </div>
-      </div>
+      <ConversationHeader
+        contactName={contactName}
+        onlineStatus={onlineStatus}
+        lastSeenTimestamp={lastSeenTimestamp}
+        handleBackNavigation={handleBackNavigation}
+      />
       <div className="conversation-main" ref={chatWindowRef}>
         {messages &&
           Object.entries(messages).map(([date, conversations]) => (

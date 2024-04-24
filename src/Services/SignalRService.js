@@ -82,3 +82,10 @@ export const receiveMessage = (callback) => {
     callback(senderUserId, message);
   });
 };
+
+export const handleContactStatusChange = (callback) => {
+  const hubConnection = getHubConnection();
+  hubConnection.on("UserStatusChanged", (userId, isOnline) => {
+    callback(userId, isOnline);
+  });
+};

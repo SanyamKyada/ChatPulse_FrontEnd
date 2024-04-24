@@ -233,7 +233,7 @@ strong {
   top: 0;
   z-index: -1;
 }
-.auth :before {
+.auth #content:before {
   -webkit-transform: rotate(-3deg);
   -moz-transform: rotate(-3deg);
   -ms-transform: rotate(-3deg);
@@ -413,4 +413,15 @@ strong {
   background: #f9f9f9;
   padding: 5px 25px;
   font-size: 12px;
+}
+
+@media screen and (max-width: 767px) {
+  body:has(.auth) {
+    padding-top: 50%;
+    height: 100vh;
+  }
+
+  .auth .container {
+    width: 100%;
+  }
 }
