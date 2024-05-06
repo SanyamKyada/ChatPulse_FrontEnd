@@ -4,7 +4,7 @@ import { ConversationGroups } from "../../types/Conversation";
 import ConversationForm from "./ConversationForm";
 import { getGroupTitleFromDate } from "../../util/datetime";
 import axios from "axios";
-import { receiveMessage, sendMessage } from "../../Services/SignalRService";
+import { getHubConnection, sendMessage } from "../../Services/SignalRService";
 import ConversationHeader from "./ConversationHeader";
 
 const CONTACT_IMAGE =
@@ -17,6 +17,7 @@ type ConversationMainProps = {
   onlineStatus: boolean;
   lastSeenTimestamp: string;
   handleBackNavigation: (p) => void;
+  updateUnseenMessages: (p1: string, p2: boolean) => void;
 };
 
 const ConversationMain: React.FC<ConversationMainProps> = ({
@@ -26,6 +27,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   onlineStatus,
   lastSeenTimestamp,
   handleBackNavigation,
+  updateUnseenMessages,
 }) => {
   console.log("%cConversationMain", "font-weight: bold; color: #dc3545; ");
   const chatWindowRef = useRef<HTMLDivElement>(null);
@@ -47,8 +49,37 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
       }
     };
 
-    if (activeConversationId) fetchConversationMessages();
+    if (activeConversationId) {
+      fetchConversationMessages();
+    }
   }, [activeConversationId]);
+
+  useEffect(() => {
+    const receiveMessageHandler = (senderUserId, message) => {
+      if (senderUserId === contactId) {
+        setNewMessage(message);
+        updateMessageStatus();
+      } else {
+        updateUnseenMessages(senderUserId, true);
+      }
+    };
+
+    const hubConnection = getHubConnection();
+    hubConnection.on("ReceiveMessage", receiveMessageHandler);
+
+    const updateMessageStatus = async () => {
+      const userId = sessionStorage.getItem("userId");
+      const response = await axios.put(
+        `https://localhost:7003/api/conversation/${activeConversationId}/messages/seen/${userId}`
+      );
+      updateUnseenMessages(contactId, false);
+    };
+    updateMessageStatus();
+
+    return () => {
+      hubConnection.off("ReceiveMessage", receiveMessageHandler);
+    };
+  }, [contactId]);
 
   const formatConversationMessages = (messages: any[]): ConversationGroups => {
     const groups: ConversationGroups = {};
@@ -107,14 +138,8 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
 
   const handleSendMessage = (message) => {
     setNewMessage(message, true);
-    sendMessage(contactId, message);
+    sendMessage(contactId, message, activeConversationId);
   };
-
-  useEffect(() => {
-    receiveMessage((senderUserId, message) => {
-      setNewMessage(message);
-    });
-  }, []);
 
   return (
     <div className="conversation active" id="conversation-1">

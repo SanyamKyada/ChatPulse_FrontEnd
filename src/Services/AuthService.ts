@@ -1,4 +1,7 @@
-export const isTokenExpired = () => {
+export const isLoggedIn = (): boolean =>
+  sessionStorage.getItem("access_token") !== null;
+
+export const isTokenExpired = (): boolean => {
   const token = sessionStorage.getItem("access_token");
   if (!token) return true; // Token not found
   const decodedToken = JSON.parse(atob(token.split(".")[1]));

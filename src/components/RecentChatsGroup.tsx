@@ -27,9 +27,11 @@ const RecentChatsGroup: React.FC<{
               <span className="content-message-text">{item.lastMessage}</span>
             </span>
             <span className="content-message-more">
-              <span className="content-message-unread">
-                {item.noOfUnseenMessages}
-              </span>
+              {item.noOfUnseenMessages > 0 && (
+                <span className="content-message-unread">
+                  {item.noOfUnseenMessages}
+                </span>
+              )}
               <span className="content-message-time">
                 {item.lastMessageRecivedAt}
               </span>

@@ -14,7 +14,7 @@ import { isTokenExpired, refreshAccessToken } from "./AuthService";
 
 let hubCon;
 
-const getHubConnection = () => {
+export const getHubConnection = () => {
   const token = getAuthToken();
   // if (!hubCon && token) {
   if (token && (!hubCon || (hubCon && isTokenExpired()))) {
@@ -62,10 +62,19 @@ export const startConnection = async () => {
   }
 };
 
-export const sendMessage = async (receiverUserId, message) => {
+export const sendMessage = async (
+  receiverUserId,
+  message,
+  activeConversationId
+) => {
   try {
     const hubConnection = getHubConnection();
-    await hubConnection.invoke("SendMessage", receiverUserId, message);
+    await hubConnection.invoke(
+      "SendMessage",
+      receiverUserId,
+      message,
+      activeConversationId
+    );
   } catch (err) {
     debugger;
     console.error("Error while sending message:", err);
@@ -74,13 +83,6 @@ export const sendMessage = async (receiverUserId, message) => {
     }
     await startConnection();
   }
-};
-
-export const receiveMessage = (callback) => {
-  const hubConnection = getHubConnection();
-  hubConnection.on("ReceiveMessage", (senderUserId, message) => {
-    callback(senderUserId, message);
-  });
 };
 
 export const handleContactStatusChange = (callback) => {
