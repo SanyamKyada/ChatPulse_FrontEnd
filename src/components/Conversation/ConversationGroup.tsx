@@ -37,6 +37,11 @@ const ConversationGroup: FC<{
 
   return (
     <ul className="conversation-wrapper">
+      {/* <div className="a">
+        <i className="b ri-chat-smile-3-line"></i>
+        <p className="c">Request samay for a chat</p>
+        <button className="d">Send Request</button>
+      </div> */}
       <ConversationDivider date={date} />
       {groupedConversations.map((group, index) => (
         <li

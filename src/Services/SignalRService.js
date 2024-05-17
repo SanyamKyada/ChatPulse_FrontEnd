@@ -1,6 +1,7 @@
 import * as signalR from "@microsoft/signalr";
 import { getAuthToken } from "../util/auth";
 import { isTokenExpired, refreshAccessToken } from "./AuthService";
+import { CP_API_URL_DEV } from "../environment";
 
 // const hubConnection = new signalR.HubConnectionBuilder()
 //     // .withUrl('https://localhost:7003/chat')
@@ -20,7 +21,7 @@ export const getHubConnection = () => {
   if (token && (!hubCon || (hubCon && isTokenExpired()))) {
     hubCon = new signalR.HubConnectionBuilder()
       // .withUrl('https://localhost:7003/chat')
-      .withUrl("https://localhost:7003/chat?access_token=" + token)
+      .withUrl(`${CP_API_URL_DEV}/chat?access_token=${token}`)
       .configureLogging(signalR.LogLevel.Information)
       .build();
 
@@ -90,4 +91,11 @@ export const handleContactStatusChange = (callback) => {
   hubConnection.on("UserStatusChanged", (userId, isOnline) => {
     callback(userId, isOnline);
   });
+};
+
+export const NotifyTypingToContacts = async () => {
+  try {
+    const hubConnection = getHubConnection();
+    await hubConnection.invoke("NotifyTyping");
+  } catch (error) {}
 };

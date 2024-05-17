@@ -1,3 +1,5 @@
+import { CP_API_URL_DEV } from "../environment";
+
 export const isLoggedIn = (): boolean =>
   sessionStorage.getItem("access_token") !== null;
 
@@ -15,7 +17,7 @@ export const refreshAccessToken = async () => {
     const refreshToken = sessionStorage.getItem("refreshToken");
     const jwtToken = sessionStorage.getItem("access_token");
     const response = await fetch(
-      "https://localhost:7003/api/account/refresh-token",
+      `${CP_API_URL_DEV}/api/account/refresh-token`,
       {
         method: "POST",
         headers: {

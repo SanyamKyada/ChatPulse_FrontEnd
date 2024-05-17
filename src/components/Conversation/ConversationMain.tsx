@@ -6,6 +6,8 @@ import { getGroupTitleFromDate } from "../../util/datetime";
 import axios from "axios";
 import { getHubConnection, sendMessage } from "../../Services/SignalRService";
 import ConversationHeader from "./ConversationHeader";
+import TypingIndicator from "../TypingIndicator";
+import { CP_API_URL_DEV } from "../../environment";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -16,8 +18,14 @@ type ConversationMainProps = {
   contactName: string;
   onlineStatus: boolean;
   lastSeenTimestamp: string;
+  profileImage: string | null;
   handleBackNavigation: (p) => void;
   updateUnseenMessages: (p1: string, p2: boolean) => void;
+  setLastMessageOfConversation: (
+    message: string,
+    isMessageReceived: boolean,
+    senderUserId: string | null
+  ) => void;
 };
 
 const ConversationMain: React.FC<ConversationMainProps> = ({
@@ -26,20 +34,25 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   contactName,
   onlineStatus,
   lastSeenTimestamp,
+  profileImage,
   handleBackNavigation,
   updateUnseenMessages,
+  setLastMessageOfConversation,
 }) => {
   console.log("%cConversationMain", "font-weight: bold; color: #dc3545; ");
   const chatWindowRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ConversationGroups>({});
   const [toggleScroll, setToggleScroll] = useState<boolean>(false);
+  const typeIndicatorRef = useRef<{ hideTypingIndicator: () => void } | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchConversationMessages = async () => {
       try {
         const userId = sessionStorage.getItem("userId");
         const response = await axios.get(
-          `https://localhost:7003/api/conversation/${activeConversationId}/messages?userId=${userId}&skip=0&take=20`
+          `${CP_API_URL_DEV}/api/conversation/${activeConversationId}/messages?userId=${userId}&skip=0&take=20`
         );
         const messageGroups = formatConversationMessages(response.data);
         setMessages(messageGroups);
@@ -59,9 +72,13 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
       if (senderUserId === contactId) {
         setNewMessage(message);
         updateMessageStatus();
+        if (typeIndicatorRef.current) {
+          typeIndicatorRef.current.hideTypingIndicator();
+        }
       } else {
         updateUnseenMessages(senderUserId, true);
       }
+      setLastMessageOfConversation(message, true, senderUserId);
     };
 
     const hubConnection = getHubConnection();
@@ -70,7 +87,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
     const updateMessageStatus = async () => {
       const userId = sessionStorage.getItem("userId");
       const response = await axios.put(
-        `https://localhost:7003/api/conversation/${activeConversationId}/messages/seen/${userId}`
+        `${CP_API_URL_DEV}/api/conversation/${activeConversationId}/messages/seen/${userId}`
       );
       updateUnseenMessages(contactId, false);
     };
@@ -139,6 +156,9 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   const handleSendMessage = (message) => {
     setNewMessage(message, true);
     sendMessage(contactId, message, activeConversationId);
+
+    const userId = sessionStorage.getItem("userId");
+    if (userId) setLastMessageOfConversation(message, false, null);
   };
 
   return (
@@ -147,6 +167,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
         contactName={contactName}
         onlineStatus={onlineStatus}
         lastSeenTimestamp={lastSeenTimestamp}
+        profileImage={profileImage}
         handleBackNavigation={handleBackNavigation}
       />
       <div className="conversation-main" ref={chatWindowRef}>
@@ -158,6 +179,13 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
               conversations={conversations}
             />
           ))}
+        <TypingIndicator
+          contactId={contactId}
+          toggleScroll={() => {
+            setToggleScroll((prev) => !prev);
+          }}
+          ref={typeIndicatorRef}
+        />
       </div>
       <ConversationForm
         activeConversationId={activeConversationId}

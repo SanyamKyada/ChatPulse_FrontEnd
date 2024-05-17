@@ -419,6 +419,11 @@ strong {
   body:has(.auth) {
     padding-top: 50%;
     height: 100vh;
+    margin: 20px;
+  }
+
+  body:has(.auth) #content {
+    width: unset;
   }
 
   .auth .container {

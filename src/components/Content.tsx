@@ -13,6 +13,9 @@ import {
   handleContactStatusChange,
 } from "../Services/SignalRService";
 import { isLoggedIn } from "../Services/AuthService";
+import { CP_API_URL_DEV } from "../environment";
+import PersonInvitationBox from "./PersonInvitationBox";
+import { PersonToInvite } from "../types/SearchPeople";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -20,29 +23,39 @@ const CONTACT_IMAGE =
 const groupConversationsByTimestamp = (
   conversations: RecentChatAPIResponse
 ) => {
-  return conversations.reduce((groups: RecentChatGroups, conversation) => {
-    const groupKey = getGroupTitleFromDate(conversation.lastMessage.timestamp);
-    if (!groups[groupKey]) {
-      groups[groupKey] = [];
-    }
-    groups[groupKey].push({
-      conversationId: conversation.conversationId,
-      personImageURL: CONTACT_IMAGE,
-      personName: conversation.contact.name,
-      contactId: conversation.contact.contactId,
-      lastMessage: conversation.lastMessage.content,
-      lastMessageRecivedAt: new Date(
+  const sortedConversations = conversations.sort((a, b) => {
+    const timestampA = new Date(a.lastMessage.timestamp);
+    const timestampB = new Date(b.lastMessage.timestamp);
+    return timestampB.getTime() - timestampA.getTime();
+  });
+  return sortedConversations.reduce(
+    (groups: RecentChatGroups, conversation) => {
+      const groupKey = getGroupTitleFromDate(
         conversation.lastMessage.timestamp
-      ).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      noOfUnseenMessages: conversation.numberOfUnseenMessages,
-      isOnline: conversation.contact.isOnline,
-      lastSeenTimestamp: conversation.contact.lastSeenTimestamp,
-    });
-    return groups;
-  }, {});
+      );
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push({
+        conversationId: conversation.conversationId,
+        personImageURL: CONTACT_IMAGE,
+        personName: conversation.contact.name,
+        contactId: conversation.contact.contactId,
+        lastMessage: conversation.lastMessage.content,
+        lastMessageRecivedAt: new Date(
+          conversation.lastMessage.timestamp
+        ).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        noOfUnseenMessages: conversation.numberOfUnseenMessages,
+        isOnline: conversation.contact.isOnline,
+        lastSeenTimestamp: conversation.contact.lastSeenTimestamp,
+      });
+      return groups;
+    },
+    {}
+  );
 };
 
 const Content: React.FC = () => {
@@ -54,6 +67,14 @@ const Content: React.FC = () => {
 
   const recentChatGroups = groupConversationsByTimestamp(recentChats);
 
+  // const [personToInviteId, setPersonToInviteId] = useState<string | undefined>(
+  //   undefined
+  // );
+
+  const [personToInviteDetails, setPersonToInviteDetails] = useState<
+    PersonToInvite | undefined
+  >(undefined);
+
   const SetConversationId = (conversationId) => {
     setConversationId(conversationId);
   };
@@ -63,7 +84,7 @@ const Content: React.FC = () => {
       try {
         const userId = sessionStorage.getItem("userId");
         const response = await axios.get(
-          `https://localhost:7003/api/conversation/${userId}/recent`
+          `${CP_API_URL_DEV}/api/conversation/${userId}/recent`
         );
         setRecentChats(response.data);
       } catch (error) {
@@ -104,6 +125,7 @@ const Content: React.FC = () => {
     if (isLoggedIn()) {
       const receiveMessageHandler = (senderUserId, message) => {
         updateUnseenMessages(senderUserId, true);
+        setLastMessageOfConversation(message, true, senderUserId);
       };
       const hubConnection = getHubConnection();
       if (conversationId === undefined) {
@@ -116,7 +138,11 @@ const Content: React.FC = () => {
     }
   }, [conversationId === undefined]);
 
-  let contactId, contactName, contactOnlineStatus, lastSeenTimestamp;
+  let contactId,
+    contactName,
+    contactOnlineStatus,
+    lastSeenTimestamp,
+    profileImage;
   if (conversationId && recentChats.length) {
     const activeConversation = recentChats.find(
       (x) => x.conversationId == conversationId
@@ -125,6 +151,7 @@ const Content: React.FC = () => {
     contactName = activeConversation?.contact.name;
     contactOnlineStatus = activeConversation?.contact.isOnline;
     lastSeenTimestamp = activeConversation?.contact.lastSeenTimestamp;
+    profileImage = activeConversation?.contact.profileImage;
   }
 
   const updateUnseenMessages = (
@@ -153,27 +180,76 @@ const Content: React.FC = () => {
     });
   };
 
+  const setLastMessageOfConversation = (
+    message: string,
+    isMessageReceived: boolean = false, //To identify if the message is received from any contact or send by me
+    senderUserId: string | null
+  ): void => {
+    setRecentChats((prevChats: RecentChatAPIResponse) => {
+      const conversationIndex = isMessageReceived
+        ? prevChats.findIndex((x) => x.contact.contactId == senderUserId)
+        : prevChats.findIndex((x) => x.conversationId == conversationId);
+      if (conversationIndex !== -1) {
+        const updatedConversation = {
+          ...prevChats[conversationIndex],
+        };
+
+        updatedConversation.lastMessage.content = message;
+        updatedConversation.lastMessage.timestamp = new Date().toISOString();
+
+        const updatedChats = [...prevChats];
+        updatedChats[conversationIndex] = updatedConversation;
+        return updatedChats;
+      }
+
+      return prevChats;
+    });
+  };
+
+  const handleBackNavigationFromInviteBox = () => {
+    setPersonToInviteDetails(undefined);
+  };
+
+  const OnSelectUnknownPerson = (person: PersonToInvite) => {
+    setPersonToInviteDetails(person);
+    setConversationId(undefined);
+  };
+
   return (
     <div className="chat-content">
       <RecentChats
         recentChatGroups={recentChatGroups}
         OnSelectConversation={SetConversationId}
+        OnSelectUnknownPerson={OnSelectUnknownPerson}
       />
 
-      {conversationId ? (
+      {conversationId && (
         <ConversationMain
           activeConversationId={conversationId}
           onlineStatus={contactOnlineStatus}
           contactId={contactId}
           contactName={contactName}
           lastSeenTimestamp={lastSeenTimestamp}
+          profileImage={profileImage}
           handleBackNavigation={SetConversationId}
           updateUnseenMessages={updateUnseenMessages}
+          setLastMessageOfConversation={setLastMessageOfConversation}
         />
-      ) : (
+      )}
+      {!conversationId && personToInviteDetails !== undefined && (
+        <PersonInvitationBox
+          {...personToInviteDetails}
+          handleBackNavigation={handleBackNavigationFromInviteBox}
+        />
+      )}
+      {!conversationId && !personToInviteDetails && (
         <div className="conversation conversation-default active">
           <i className="ri-chat-3-line"></i>
-          <p>Select chat and view conversation!</p>
+          <p>
+            {Object.values(recentChatGroups).length > 0
+              ? "Select chat and view conversation!"
+              : "Search people and start conversation!"}
+          </p>
         </div>
       )}
     </div>

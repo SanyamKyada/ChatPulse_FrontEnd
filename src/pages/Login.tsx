@@ -44,6 +44,7 @@ const Login: FC = () => {
           }
           sessionStorage.setItem("email", email);
           sessionStorage.setItem("userId", resp.userId);
+          sessionStorage.setItem("userN", resp.userN);
           sessionStorage.setItem("access_token", resp.jwtToken);
           sessionStorage.setItem("refreshToken", resp.refreshToken);
 
