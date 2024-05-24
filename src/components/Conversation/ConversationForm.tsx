@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import Picker from "emoji-picker-react";
-import { NotifyTypingToContacts } from "../../Services/SignalRService";
+import { NotifyTypingToContacts } from "../../services/signalR/SignalRService";
 
 const ConversationForm: React.FC<{
   activeConversationId: number | undefined;

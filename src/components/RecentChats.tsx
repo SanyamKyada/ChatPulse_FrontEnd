@@ -4,14 +4,20 @@ import { RecentChat, RecentChatGroups } from "../types/RecentChats";
 import useDebounce from "../hooks/useDebounce";
 import axios, { CancelTokenSource } from "axios";
 import { CP_API_URL_DEV } from "../environment";
-import { DirectorySearchResult, PersonToInvite } from "../types/SearchPeople";
+import { DirectorySearchResult, PersonToInvite } from "../types/FriendRequest";
 import CPDirectorySearchResult from "../components/CPDirectorySearchResult";
 
 const RecentChats: React.FC<{
   recentChatGroups: RecentChatGroups;
   OnSelectConversation: (conversationId) => void;
   OnSelectUnknownPerson: (Person: PersonToInvite) => void;
-}> = ({ recentChatGroups, OnSelectConversation, OnSelectUnknownPerson }) => {
+  OnSelectFriendRequest: (friendRequestId) => void;
+}> = ({
+  recentChatGroups,
+  OnSelectConversation,
+  OnSelectUnknownPerson,
+  OnSelectFriendRequest,
+}) => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const cancleTokenRef = useRef<CancelTokenSource>();
@@ -137,6 +143,7 @@ const RecentChats: React.FC<{
             <RecentChatsGroup
               chatGroupTitle={title}
               OnSelectConversation={OnSelectConversation}
+              OnSelectFriendRequest={OnSelectFriendRequest}
               recentChats={recentChats}
             />
           </React.Fragment>

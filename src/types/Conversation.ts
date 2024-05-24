@@ -25,8 +25,9 @@ interface LastMessage {
   isFromCurrentUser: boolean;
 }
 
-interface ConversationApiResponse {
+export interface ConversationApiResponse {
   conversationId: number;
+  friendRequestId: number;
   numberOfUnseenMessages: number;
   contact: Contact;
   conversationType: number;

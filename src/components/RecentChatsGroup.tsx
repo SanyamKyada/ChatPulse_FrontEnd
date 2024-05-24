@@ -5,7 +5,13 @@ const RecentChatsGroup: React.FC<{
   chatGroupTitle: string;
   OnSelectConversation: (conversationId) => void;
   recentChats: RecentChat[];
-}> = ({ chatGroupTitle, OnSelectConversation, recentChats }) => {
+  OnSelectFriendRequest: (friendRequestId) => void;
+}> = ({
+  chatGroupTitle,
+  OnSelectConversation,
+  recentChats,
+  OnSelectFriendRequest,
+}) => {
   return (
     <ul className="content-messages-list">
       <li className="content-message-title">
@@ -14,7 +20,13 @@ const RecentChatsGroup: React.FC<{
       {recentChats.map((item, index) => (
         <li
           key={item.conversationId}
-          onClick={() => OnSelectConversation(item.conversationId)}
+          onClick={() => {
+            if (item.conversationId) {
+              OnSelectConversation(item.conversationId);
+            } else {
+              OnSelectFriendRequest(item.friendRequestId);
+            }
+          }}
         >
           <a href="#" id={`recentchat-${item.conversationId}`}>
             <img

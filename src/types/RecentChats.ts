@@ -1,5 +1,6 @@
 export interface RecentChat {
   conversationId: number;
+  friendRequestId: number;
   contactId: string;
   personImageURL: string;
   personName: string;

@@ -1,11 +1,10 @@
 import React, {
-  Ref,
   forwardRef,
   useEffect,
   useImperativeHandle,
   useState,
 } from "react";
-import { getHubConnection } from "../Services/SignalRService";
+import { getHubConnection } from "../services/signalR/SignalRService";
 
 interface TypingIndicatorProps {
   contactId: string;

@@ -3,7 +3,7 @@ import RecentChats from "./RecentChats";
 import ConversationMain from "./Conversation/ConversationMain";
 import axios from "axios";
 import {
-  ConversationGroups,
+  ConversationApiResponse,
   RecentChatAPIResponse,
 } from "../types/Conversation";
 import { RecentChatGroups } from "../types/RecentChats";
@@ -11,11 +11,16 @@ import { getGroupTitleFromDate } from "../util/datetime";
 import {
   getHubConnection,
   handleContactStatusChange,
-} from "../Services/SignalRService";
-import { isLoggedIn } from "../Services/AuthService";
+  handleReceiveFriendRequest,
+} from "../services/signalR/SignalRService";
+import { isLoggedIn } from "../services/AuthService";
 import { CP_API_URL_DEV } from "../environment";
-import PersonInvitationBox from "./PersonInvitationBox";
-import { PersonToInvite } from "../types/SearchPeople";
+import { PersonToInvite } from "../types/FriendRequest";
+import {
+  RECEIVE_FRIEND_REQUEST_MESSAGE,
+  RECEIVE_MESSAGE,
+} from "../services/signalR/constants";
+import InvitationChatWindow from "./invitation/InvitationChatWindow";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -38,6 +43,7 @@ const groupConversationsByTimestamp = (
       }
       groups[groupKey].push({
         conversationId: conversation.conversationId,
+        friendRequestId: conversation.friendRequestId,
         personImageURL: CONTACT_IMAGE,
         personName: conversation.contact.name,
         contactId: conversation.contact.contactId,
@@ -58,6 +64,35 @@ const groupConversationsByTimestamp = (
   );
 };
 
+const getPersonDetails = (
+  recentChats: RecentChatAPIResponse,
+  conversationId: number | undefined,
+  friendRequestId: number | undefined,
+  personToInviteDetails: PersonToInvite
+) => {
+  const activeConversation = recentChats.find(
+    (chat) =>
+      chat.conversationId === conversationId ||
+      chat.friendRequestId === friendRequestId
+  );
+
+  return activeConversation
+    ? {
+        contactId: activeConversation.contact.contactId,
+        contactName: activeConversation.contact.name,
+        contactOnlineStatus: activeConversation.contact.isOnline,
+        lastSeenTimestamp: activeConversation.contact.lastSeenTimestamp,
+        profileImage: activeConversation.contact.profileImage,
+      }
+    : {
+        contactId: personToInviteDetails.userId,
+        contactName: personToInviteDetails.name,
+        contactOnlineStatus: personToInviteDetails.isOnline,
+        lastSeenTimestamp: personToInviteDetails.lastSeenTimestamp,
+        profileImage: personToInviteDetails.profileImage,
+      };
+};
+
 const Content: React.FC = () => {
   const [conversationId, setConversationId] = useState<number | undefined>(
     undefined
@@ -67,13 +102,12 @@ const Content: React.FC = () => {
 
   const recentChatGroups = groupConversationsByTimestamp(recentChats);
 
-  // const [personToInviteId, setPersonToInviteId] = useState<string | undefined>(
-  //   undefined
-  // );
+  const [friendRequestId, setFriendRequestId] = useState<number | undefined>(
+    undefined
+  );
 
-  const [personToInviteDetails, setPersonToInviteDetails] = useState<
-    PersonToInvite | undefined
-  >(undefined);
+  const [personToInviteDetails, setPersonToInviteDetails] =
+    useState<PersonToInvite>({} as PersonToInvite);
 
   const SetConversationId = (conversationId) => {
     setConversationId(conversationId);
@@ -117,42 +151,74 @@ const Content: React.FC = () => {
           return prevChats;
         });
       });
+
+      handleReceiveFriendRequest((friendRequestId, senderUser) => {
+        setRecentChats((prevChats: RecentChatAPIResponse) => {
+          const updatedChats = [...prevChats];
+
+          const newChat = {
+            friendRequestId: friendRequestId,
+            numberOfUnseenMessages: 1,
+            contact: {
+              contactId: senderUser?.userId,
+              name: senderUser?.name,
+              profileImage: senderUser?.profileImage,
+              isOnline: senderUser?.isOnline,
+              lastSeenTimestamp: senderUser?.lastSeenTimestamp,
+            },
+            conversationType: 0,
+            lastMessage: {
+              messageId: 0,
+              content: "I'd like to add you on Chat",
+              timestamp: new Date().toISOString(),
+              isFromCurrentUser: true,
+            },
+          };
+          updatedChats.push(newChat as ConversationApiResponse);
+
+          return updatedChats;
+        });
+      });
     }
   }, []);
 
-  //This effect will run when no conversation is selected.
+  //This effect will run when no conversation(with friend) is selected/ or you've selected a user which is not a friend.
+  //In other words, we need to run this effect when ConversationMain is not rendred.
   useEffect(() => {
     if (isLoggedIn()) {
       const receiveMessageHandler = (senderUserId, message) => {
         updateUnseenMessages(senderUserId, true);
         setLastMessageOfConversation(message, true, senderUserId);
       };
+      const receiveFriendReqMessageHandler = (
+        senderUserId,
+        friendRequestId,
+        message
+      ) => {
+        updateUnseenMessages(senderUserId, true);
+        setLastMessageOfConversation(message, true, senderUserId);
+      };
+
       const hubConnection = getHubConnection();
       if (conversationId === undefined) {
-        //Handle recive message when no conversation is selected
-        hubConnection.on("ReceiveMessage", receiveMessageHandler);
+        //Handle receive message when no conversation is selected
+        hubConnection.on(RECEIVE_MESSAGE, receiveMessageHandler);
+      } else if (friendRequestId === undefined) {
+        //Handle receive friend request message when no friend request is selected
+        hubConnection.on(
+          RECEIVE_FRIEND_REQUEST_MESSAGE,
+          receiveFriendReqMessageHandler
+        );
       }
       return () => {
-        hubConnection.off("ReceiveMessage", receiveMessageHandler);
+        hubConnection.off(RECEIVE_MESSAGE, receiveMessageHandler);
+        hubConnection.off(
+          RECEIVE_FRIEND_REQUEST_MESSAGE,
+          receiveFriendReqMessageHandler
+        );
       };
     }
   }, [conversationId === undefined]);
-
-  let contactId,
-    contactName,
-    contactOnlineStatus,
-    lastSeenTimestamp,
-    profileImage;
-  if (conversationId && recentChats.length) {
-    const activeConversation = recentChats.find(
-      (x) => x.conversationId == conversationId
-    );
-    contactId = activeConversation?.contact.contactId;
-    contactName = activeConversation?.contact.name;
-    contactOnlineStatus = activeConversation?.contact.isOnline;
-    lastSeenTimestamp = activeConversation?.contact.lastSeenTimestamp;
-    profileImage = activeConversation?.contact.profileImage;
-  }
 
   const updateUnseenMessages = (
     senderUserId: string,
@@ -206,52 +272,121 @@ const Content: React.FC = () => {
     });
   };
 
+  const handleAfterSendFriendRequest = (friendRequestId: number) => {
+    debugger;
+    setRecentChats((prevChats: RecentChatAPIResponse) => {
+      const updatedChats = [...prevChats];
+
+      const newChat = {
+        // conversationId: undefined,
+        friendRequestId: friendRequestId,
+        numberOfUnseenMessages: 0,
+        contact: {
+          contactId: personToInviteDetails?.userId,
+          name: personToInviteDetails?.name,
+          profileImage: personToInviteDetails?.profileImage,
+          isOnline: personToInviteDetails?.isOnline,
+          lastSeenTimestamp: personToInviteDetails?.lastSeenTimestamp,
+        },
+        conversationType: 0,
+        lastMessage: {
+          messageId: 0,
+          content: "I'd like to add you on Chat",
+          timestamp: new Date().toISOString(),
+          isFromCurrentUser: true,
+        },
+      };
+      updatedChats.push(newChat as ConversationApiResponse);
+
+      return updatedChats;
+    });
+
+    setPersonToInviteDetails({} as PersonToInvite);
+    setFriendRequestId(friendRequestId);
+  };
+
   const handleBackNavigationFromInviteBox = () => {
-    setPersonToInviteDetails(undefined);
+    setPersonToInviteDetails({} as PersonToInvite);
+    setFriendRequestId(undefined);
+  };
+
+  const OnSelectConversation = (conversationId: number) => {
+    setFriendRequestId(undefined);
+    setConversationId(conversationId);
   };
 
   const OnSelectUnknownPerson = (person: PersonToInvite) => {
     setPersonToInviteDetails(person);
+    setFriendRequestId(undefined);
     setConversationId(undefined);
   };
+
+  const OnSelectFriendRequest = (friendRequestId: number) => {
+    setFriendRequestId(friendRequestId);
+    setConversationId(undefined);
+    setPersonToInviteDetails({} as PersonToInvite);
+  };
+
+  const personDetails = getPersonDetails(
+    recentChats,
+    conversationId,
+    friendRequestId,
+    personToInviteDetails
+  );
 
   return (
     <div className="chat-content">
       <RecentChats
         recentChatGroups={recentChatGroups}
-        OnSelectConversation={SetConversationId}
-        OnSelectUnknownPerson={OnSelectUnknownPerson}
+        OnSelectConversation={OnSelectConversation}
+        OnSelectUnknownPerson={OnSelectUnknownPerson} //When you search and select non-friend person
+        OnSelectFriendRequest={OnSelectFriendRequest} //When you select a person who's not a friend but you/him has sent a friend request
       />
 
       {conversationId && (
         <ConversationMain
           activeConversationId={conversationId}
-          onlineStatus={contactOnlineStatus}
-          contactId={contactId}
-          contactName={contactName}
-          lastSeenTimestamp={lastSeenTimestamp}
-          profileImage={profileImage}
+          onlineStatus={personDetails.contactOnlineStatus}
+          contactId={personDetails.contactId}
+          contactName={personDetails.contactName}
+          lastSeenTimestamp={personDetails.lastSeenTimestamp}
+          profileImage={personDetails.profileImage}
           handleBackNavigation={SetConversationId}
           updateUnseenMessages={updateUnseenMessages}
           setLastMessageOfConversation={setLastMessageOfConversation}
         />
       )}
-      {!conversationId && personToInviteDetails !== undefined && (
-        <PersonInvitationBox
-          {...personToInviteDetails}
-          handleBackNavigation={handleBackNavigationFromInviteBox}
-        />
-      )}
-      {!conversationId && !personToInviteDetails && (
-        <div className="conversation conversation-default active">
-          <i className="ri-chat-3-line"></i>
-          <p>
-            {Object.values(recentChatGroups).length > 0
-              ? "Select chat and view conversation!"
-              : "Search people and start conversation!"}
-          </p>
-        </div>
-      )}
+      {!conversationId &&
+        (friendRequestId || Object.keys(personToInviteDetails).length > 0) && (
+          <InvitationChatWindow
+            name={personDetails.contactName}
+            userId={personDetails.contactId}
+            friendRequestId={friendRequestId}
+            profileImage={personDetails.profileImage}
+            isOnline={personDetails.contactOnlineStatus}
+            lastSeenTimestamp={personDetails.lastSeenTimestamp}
+            isRequestAlreadySent={
+              !conversationId &&
+              !!friendRequestId &&
+              Object.keys(personToInviteDetails).length == 0
+            }
+            handleBackNavigation={handleBackNavigationFromInviteBox}
+            handleAfterSendFriendRequest={handleAfterSendFriendRequest}
+            updateUnseenMessages={updateUnseenMessages}
+          />
+        )}
+      {!conversationId &&
+        !friendRequestId &&
+        Object.keys(personToInviteDetails).length == 0 && (
+          <div className="conversation conversation-default active">
+            <i className="ri-chat-3-line"></i>
+            <p>
+              {Object.values(recentChatGroups).length > 0
+                ? "Select chat and view conversation!"
+                : "Search people and start conversation!"}
+            </p>
+          </div>
+        )}
     </div>
   );
 };

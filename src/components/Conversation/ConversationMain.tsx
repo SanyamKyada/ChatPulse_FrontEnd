@@ -4,10 +4,14 @@ import { ConversationGroups } from "../../types/Conversation";
 import ConversationForm from "./ConversationForm";
 import { getGroupTitleFromDate } from "../../util/datetime";
 import axios from "axios";
-import { getHubConnection, sendMessage } from "../../Services/SignalRService";
+import {
+  getHubConnection,
+  sendMessage,
+} from "../../services/signalR/SignalRService";
 import ConversationHeader from "./ConversationHeader";
 import TypingIndicator from "../TypingIndicator";
 import { CP_API_URL_DEV } from "../../environment";
+import { RECEIVE_MESSAGE } from "../../services/signalR/constants";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -82,7 +86,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
     };
 
     const hubConnection = getHubConnection();
-    hubConnection.on("ReceiveMessage", receiveMessageHandler);
+    hubConnection.on(RECEIVE_MESSAGE, receiveMessageHandler);
 
     const updateMessageStatus = async () => {
       const userId = sessionStorage.getItem("userId");
@@ -94,7 +98,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
     updateMessageStatus();
 
     return () => {
-      hubConnection.off("ReceiveMessage", receiveMessageHandler);
+      hubConnection.off(RECEIVE_MESSAGE, receiveMessageHandler);
     };
   }, [contactId]);
 
@@ -155,7 +159,8 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
 
   const handleSendMessage = (message) => {
     setNewMessage(message, true);
-    sendMessage(contactId, message, activeConversationId);
+    if (activeConversationId)
+      sendMessage(contactId, message, activeConversationId);
 
     const userId = sessionStorage.getItem("userId");
     if (userId) setLastMessageOfConversation(message, false, null);

@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import Content from "../components/Content";
 import { useNavigate } from "react-router";
-import { startConnection } from "../Services/SignalRService";
+import { startConnection } from "../services/signalR/SignalRService";
 import Sidebar from "../UI/Sidebar";
-import { refreshAccessToken, decodeToken } from "../Services/AuthService.js";
+import { refreshAccessToken, decodeToken } from "../services/AuthService.js";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();

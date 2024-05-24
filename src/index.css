@@ -443,17 +443,14 @@ body {
 .conversation-wrapper {
   list-style-type: none;
 }
-.conversation-wrapper.invitation-window {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  left: 16px;
-  width: -webkit-fill-available;
-}
 .conversation-wrapper.invitation-window .welcome-emoji {
   display: flex;
   justify-content: flex-end;
   padding: 10px 50px;
+}
+.conversation-wrapper.conversation-wrapper.invitation-window
+  .welcome-emoji.welcome-emoji-left {
+  justify-content: flex-start;
 }
 .conversation-wrapper.invitation-window .welcome-emoji > span {
   display: inline-block;
@@ -461,7 +458,6 @@ body {
   height: 80px;
   overflow: hidden;
 }
-
 .conversation-wrapper.invitation-window .welcome-emoji > span > span {
   display: inline-block;
   width: 80px;
@@ -475,6 +471,36 @@ body {
     SpriteComponentAnimation;
   backface-visibility: hidden;
   margin-top: 160px;
+}
+.invitation-status {
+  padding: 15px;
+  background: linear-gradient(to bottom, #ffffff, #f1f5f9);
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 5px;
+  font-size: 14px;
+  margin: 0 auto;
+}
+.invitation-status .smiley {
+  font-size: 30px;
+}
+.invitation-status .invitation-text {
+  margin: 15px 0;
+  text-align: center;
+}
+.invitation-status .invitation-actions {
+  display: flex;
+  gap: 5px;
+}
+.invitation-status .invitation-action {
+  background: linear-gradient(to bottom, #d1fae5, #f1f5f9);
+  border: #94a3b8;
+  color: #059669;
+  padding: 10px 25px;
+  border-radius: 30px;
+  cursor: pointer;
 }
 .conversation-item {
   display: flex;
@@ -726,6 +752,12 @@ body {
   background-color: var(--emerald-700);
   color: var(--white);
 }
+.conversation-form-text {
+  padding-left: 50px;
+  font-size: 14px;
+  color: var(--slate-400);
+  padding-bottom: 50px;
+}
 .conversation-default {
   align-items: center;
   justify-content: center;
@@ -885,37 +917,6 @@ body {
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 9998;
 }
-
-.a {
-  padding: 15px;
-  background: #fff;
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-radius: 5px;
-  font-size: 14px;
-  margin: 0 auto;
-}
-
-.b {
-  font-size: 30px;
-}
-
-.c {
-  margin: 15px 0;
-  text-align: center;
-}
-
-.d {
-  background: #f1f5f9;
-  border: #94a3b8;
-  color: #94a3b8;
-  padding: 10px 25px;
-  border-radius: 30px;
-  cursor: pointer;
-}
-
 .chat-bubble {
   background-color: #bff5e0;
   padding: 8px 16px;
