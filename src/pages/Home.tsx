@@ -3,7 +3,7 @@ import Content from "../components/Content";
 import { useNavigate } from "react-router";
 import { startConnection } from "../services/signalR/SignalRService";
 import Sidebar from "../ui/Sidebar";
-import { refreshAccessToken, decodeToken } from "../services/AuthService.js";
+import { refreshAccessToken, decodeToken } from "../services/AuthService";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();

@@ -25,7 +25,7 @@ const Login: FC = () => {
     if (validate()) {
       setIsLoading(true);
       const userCred: LoginCredentials = {
-        email: email,
+        userName: email,
         password: password,
       };
       var userDetails: LoginResponse = await AccountApi.Login(userCred);
@@ -65,7 +65,7 @@ const Login: FC = () => {
           <Loader isLoading={isLoading} />
           <form className="auth" onSubmit={proceedLogin}>
             <h1>ChatPulse</h1>
-            <div>
+            <div style={{ position: "relative" }}>
               <input
                 type="text"
                 placeholder="Username"
@@ -75,8 +75,9 @@ const Login: FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 style={{ boxSizing: "unset" }}
               />
+              <i className="ri-user-fill"></i>
             </div>
-            <div>
+            <div style={{ position: "relative" }}>
               <input
                 type="password"
                 placeholder="Password"
@@ -86,6 +87,7 @@ const Login: FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ boxSizing: "unset" }}
               />
+              <i className="ri-lock-fill"></i>
             </div>
             <div>
               <input type="submit" value="Log in" />
