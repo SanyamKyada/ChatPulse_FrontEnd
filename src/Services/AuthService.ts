@@ -1,4 +1,4 @@
-import { CP_API_URL_DEV } from "../environment";
+const devApiUrl = import.meta.env.VITE_DEV_API_URL;
 
 export const isLoggedIn = (): boolean =>
   sessionStorage.getItem("access_token") !== null;
@@ -16,16 +16,13 @@ export const refreshAccessToken = async () => {
   try {
     const refreshToken = sessionStorage.getItem("refreshToken");
     const jwtToken = sessionStorage.getItem("access_token");
-    const response = await fetch(
-      `${CP_API_URL_DEV}/api/account/refresh-token`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ jwtToken, refreshToken }),
-      }
-    );
+    const response = await fetch(`${devApiUrl}/account/refresh-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ jwtToken, refreshToken }),
+    });
     if (!response.ok) {
       throw new Error("Failed to refresh token");
     }

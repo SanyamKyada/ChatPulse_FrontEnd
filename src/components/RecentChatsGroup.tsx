@@ -36,7 +36,14 @@ const RecentChatsGroup: React.FC<{
             />
             <span className="content-message-info">
               <span className="content-message-name">{item.personName}</span>
-              <span className="content-message-text">{item.lastMessage}</span>
+              {!item.isWave && (
+                <span className="content-message-text">{item.lastMessage}</span>
+              )}
+              {item.isWave && (
+                <span className="emoji-wrapper">
+                  <span className="emoji" title="(wave)"></span>
+                </span>
+              )}
             </span>
             <span className="content-message-more">
               {item.noOfUnseenMessages > 0 && (

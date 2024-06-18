@@ -134,30 +134,12 @@ body {
   transform: scale(0.9);
   transform-origin: left bottom;
   transition: all 0.15s ease-in-out;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 .chat-sidebar-profile.active .chat-sidebar-profile-dropdown {
   opacity: 1;
   visibility: visible;
   transform: scale(1);
-}
-.chat-sidebar-profile-dropdown a {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  text-decoration: none;
-  color: var(--slate-400);
-  font-size: 14px;
-}
-.chat-sidebar-profile-dropdown a:hover {
-  background-color: var(--slate-100);
-  color: var(--slate-600);
-}
-.chat-sidebar-profile-dropdown a:active {
-  background-color: var(--slate-200);
-}
-.chat-sidebar-profile-dropdown a i {
-  margin-right: 12px;
-  font-size: 17px;
 }
 /* end: Sidebar */
 
@@ -306,6 +288,25 @@ body {
   overflow: hidden;
   white-space: nowrap;
 }
+.content-message-info > span.emoji-wrapper {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+}
+.content-message-info > span.emoji-wrapper > span.emoji {
+  display: inline-block;
+  width: 20px;
+  height: 1140px;
+  background-image: url(https://static-asm.secure.skypeassets.com/pes/v1/emoticons/hi/views/default_40_anim_f?etag=v30&quot;);
+  background-size: 20px 1140px;
+  will-change: transform;
+  transform: translate3d(0px, -1140px, 0px);
+  transform-origin: left top;
+  animation: 2.375s steps(57) 0s infinite normal none running
+    SpriteComponentAnimation;
+  backface-visibility: hidden;
+}
 .content-message-more {
   text-align: right;
   display: flex;
@@ -325,6 +326,166 @@ body {
   color: var(--slate-400);
   font-weight: 500;
 }
+/* abc */
+.sidebar-user-profile {
+  width: 330px;
+}
+.sidebar-user-profile .profile-header {
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sidebar-user-profile .profile-header i.ri-chat-1-fill {
+  color: var(--emerald-600);
+  font-size: 22px;
+}
+.sidebar-user-profile .profile-header .btn-close {
+  margin-left: auto;
+  cursor: pointer;
+  font-size: 22px;
+}
+.sidebar-user-profile .profile-body ul {
+  list-style: none;
+}
+.sidebar-user-profile .profile-body ul.user-details {
+  display: flex;
+  justify-content: center;
+  list-style-type: none;
+  padding: 0 20px;
+  align-items: center;
+}
+.sidebar-user-profile .profile-body ul.user-details li:first-child > button {
+  border-radius: 50%;
+  height: 60px;
+  width: 60px;
+  border: none;
+  background: #c8b5db;
+  cursor: pointer;
+}
+.sidebar-user-profile
+  .profile-body
+  ul.user-details
+  li:first-child
+  > button
+  i.ri-camera-line {
+  color: #7f00ff;
+}
+
+.sidebar-user-profile .profile-body ul.user-details li:nth-child(1) {
+  margin-right: 20px;
+}
+.sidebar-user-profile .profile-body ul.user-details li:nth-child(2) {
+  width: 187px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px 0;
+}
+.sidebar-user-profile .profile-body .user-details .n {
+  font-size: 16px;
+  font-weight: 800;
+}
+.sidebar-user-profile .profile-body .user-details .e {
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar-user-profile .profile-body .user-details .sh {
+  font-size: 12px;
+  color: #0c83ce;
+}
+.sidebar-user-profile .btn-profile-share {
+  border-radius: 50%;
+  border: none;
+  height: 30px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.sidebar-user-profile ul.user-status {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  margin: 0 10px;
+  padding: 0 20px;
+  gap: 20px;
+  border-bottom: 1px solid #e1e1e1;
+}
+.sidebar-user-profile ul.user-status li.icon > span {
+  height: 13px;
+  display: inline-block;
+  width: 13px;
+  background: #21cf96;
+  border-radius: 50%;
+  margin-top: 5px;
+}
+.sidebar-user-profile ul.user-status li.text {
+  font-size: 14px;
+}
+.sidebar-user-profile ul.share-and-invite {
+  margin: 0 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.sidebar-user-profile ul.share-and-invite .share {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sidebar-user-profile ul.share-and-invite .share div:first-child,
+.sidebar-user-profile ul.share-and-invite .invite {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+}
+.sidebar-user-profile ul.share-and-invite .share .text {
+  font-size: 14px;
+  color: #8592ab;
+}
+.sidebar-user-profile ul.share-and-invite .share .ri-pencil-line {
+  cursor: pointer;
+}
+.sidebar-user-profile ul.share-and-invite .invite .text {
+  font-size: 14px;
+  font-weight: 800;
+}
+.profile-section .profile-section-header {
+  padding: 0px 20px;
+  text-transform: uppercase;
+  background-color: #f0f4f8;
+  color: #6e6e6e;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+.profile-section .profile-section-items {
+  padding: 0 10px;
+}
+.profile-section .profile-section-items .profile-section-item {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  min-height: 60px;
+  border-bottom: 1px solid #e1e1e1;
+  cursor: pointer;
+}
+.profile-section .profile-section-items .profile-section-item:last-child {
+  border: none;
+}
+.profile-section-item .icon {
+  margin-left: 20px;
+}
+.profile-section-item .text {
+  font-size: 14px;
+}
+
 /* end: Content side */
 
 /* start: Conversation */
@@ -470,7 +631,6 @@ body {
   animation: 2.375s steps(57) 0s infinite normal none running
     SpriteComponentAnimation;
   backface-visibility: hidden;
-  margin-top: 160px;
 }
 .invitation-status {
   padding: 15px;
@@ -956,6 +1116,26 @@ body {
   margin-right: 0;
 }
 
+#modal {
+  /* width: 30%; */
+  /* background: #d3b17b; */
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  animation: fade-slide-in-from-top 0.3s ease-in-out;
+  position: absolute;
+  margin: auto;
+}
+/* #modal::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+} */
+#modal h2 {
+  font-size: 1.5rem;
+  color: #4f3807;
+  text-transform: uppercase;
+  margin: 0;
+}
+
 @keyframes mercuryTypingAnimation {
   0% {
     transform: translateY(0px);
@@ -983,5 +1163,16 @@ body {
 @keyframes SpriteComponentAnimation {
   0% {
     transform: translateZ(0);
+  }
+}
+
+@keyframes fade-slide-in-from-top {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

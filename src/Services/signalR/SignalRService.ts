@@ -1,17 +1,20 @@
 import * as signalR from "@microsoft/signalr";
 import { getAuthToken } from "../../util/auth";
 import { isTokenExpired, refreshAccessToken } from "./../AuthService";
-import { CP_API_URL_DEV } from "../../environment";
 import {
   NOTIFY_TYPING,
   RECEIVE_FRIEND_REQUEST,
+  RECEIVE_FRIEND_REQUEST_ACCEPTED,
   RECEIVE_FRIEND_REQUEST_MESSAGE,
   SEND_FRIEND_REQUEST,
+  SEND_FRIEND_REQUEST_ACCEPTED,
   SEND_FRIEND_REQUEST_MESSAGE,
   SEND_MESSAGE,
   USER_STATUS_CHANGED,
 } from "./constants";
+const hubEndpoint = import.meta.env.VITE_DEV_HUB_URL;
 
+console.log(hubEndpoint);
 let hubCon;
 
 export const getHubConnection = () => {
@@ -19,8 +22,8 @@ export const getHubConnection = () => {
   // if (!hubCon && token) {
   if (token && (!hubCon || (hubCon && isTokenExpired()))) {
     hubCon = new signalR.HubConnectionBuilder()
-      // .withUrl(`${CP_API_URL_DEV}/chat?access_token=${token}`)
-      .withUrl(`${CP_API_URL_DEV}/chat`, {
+      // .withUrl(`${hubEndpoint}?access_token=${token}`)
+      .withUrl(hubEndpoint, {
         accessTokenFactory: () => {
           return token;
         },
@@ -155,3 +158,38 @@ export const handleReceiveFriendRequestMessage = (
     }
   );
 };
+
+export const sendFriendRequestAccepted = async (
+  friendRequestId: number,
+  conversationId: number,
+  receiverUserId: string
+) => {
+  try {
+    debugger;
+    const hubConnection = getHubConnection();
+    await hubConnection.invoke(
+      SEND_FRIEND_REQUEST_ACCEPTED,
+      friendRequestId,
+      conversationId,
+      receiverUserId
+    );
+  } catch (err) {
+    debugger;
+    console.error(
+      `Error while sending friend request accepted event to user ${receiverUserId}:`,
+      err
+    );
+  }
+};
+
+// export const handleReceiveFriendRequestAccepted = (
+//   callback: (p1: number, p2: number) => void
+// ) => {
+//   const hubConnection = getHubConnection();
+//   hubConnection.on(
+//     RECEIVE_FRIEND_REQUEST_ACCEPTED,
+//     (friendRequestId, conversationId) => {
+//       callback(friendRequestId, conversationId);
+//     }
+//   );
+// };

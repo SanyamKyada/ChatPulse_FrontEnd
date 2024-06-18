@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import SidebarProfile from "../components/SidebarProfile";
 
 const Sidebar: React.FC = () => {
   const [isProfileActive, setProfileActive] = useState(false);
@@ -72,16 +73,11 @@ const Sidebar: React.FC = () => {
             />
           </button>
           <ul className="chat-sidebar-profile-dropdown">
-            <li>
-              <a href="#">
-                <i className="ri-user-line"></i> Profile
-              </a>
-            </li>
-            <li onClick={handleLogout}>
-              <a href="#">
-                <i className="ri-logout-box-line"></i> Logout
-              </a>
-            </li>
+            <SidebarProfile
+              userName="Sanyam Kyada -ZWS"
+              userEmail="sayam.kyada@zobiwebsolutions.com"
+              handleLogout={handleLogout}
+            />
           </ul>
         </li>
       </ul>

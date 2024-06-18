@@ -9,6 +9,7 @@ export interface RecentChat {
   noOfUnseenMessages: number;
   isOnline: boolean;
   lastSeenTimestamp: string;
+  isWave: boolean;
 }
 
 export interface RecentChatGroups {

@@ -3,9 +3,10 @@ import RecentChatsGroup from "./RecentChatsGroup";
 import { RecentChat, RecentChatGroups } from "../types/RecentChats";
 import useDebounce from "../hooks/useDebounce";
 import axios, { CancelTokenSource } from "axios";
-import { CP_API_URL_DEV } from "../environment";
 import { DirectorySearchResult, PersonToInvite } from "../types/FriendRequest";
 import CPDirectorySearchResult from "../components/CPDirectorySearchResult";
+import { getUserId } from "../util/auth";
+import { UserApi } from "../axios";
 
 const RecentChats: React.FC<{
   recentChatGroups: RecentChatGroups;
@@ -45,9 +46,14 @@ const RecentChats: React.FC<{
 
   const searchPeople = useDebounce(async (searchQuery) => {
     setIsLoading(true);
-    const userId: string = sessionStorage.getItem("userId") ?? "";
-    const data = await getNonContactsFromApi(userId, searchQuery);
-    setChatPulseDirectory(data || []);
+    const userId: string = getUserId();
+    cancleTokenRef.current = axios.CancelToken.source();
+    const users = await UserApi.GetNonContactPeople(
+      userId,
+      searchQuery,
+      cancleTokenRef.current
+    );
+    setChatPulseDirectory(users || []);
     setIsLoading(false);
   }, 500);
 
@@ -66,25 +72,6 @@ const RecentChats: React.FC<{
     }
     return filteredData.length > 0 ? { People: filteredData } : {};
   }
-
-  const getNonContactsFromApi = async (
-    userId: string,
-    searchQuery: string
-  ): Promise<DirectorySearchResult> => {
-    console.log("Search query:", searchQuery);
-    cancleTokenRef.current = axios.CancelToken.source();
-    const response = await axios
-      .get(
-        `${CP_API_URL_DEV}/api/user/${userId}/search-people?query=${searchQuery}`,
-        {
-          cancelToken: cancleTokenRef.current.token,
-        }
-      )
-      .catch((err) => {
-        return err;
-      });
-    return response.data;
-  };
 
   const searchForm = (
     <form action="" className="content-sidebar-form">

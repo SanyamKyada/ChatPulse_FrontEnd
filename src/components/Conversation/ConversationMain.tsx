@@ -10,8 +10,9 @@ import {
 } from "../../services/signalR/SignalRService";
 import ConversationHeader from "./ConversationHeader";
 import TypingIndicator from "../TypingIndicator";
-import { CP_API_URL_DEV } from "../../environment";
 import { RECEIVE_MESSAGE } from "../../services/signalR/constants";
+import { getUserId } from "../../util/auth";
+import { ConversationApi } from "../../axios";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -54,11 +55,13 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   useEffect(() => {
     const fetchConversationMessages = async () => {
       try {
-        const userId = sessionStorage.getItem("userId");
-        const response = await axios.get(
-          `${CP_API_URL_DEV}/api/conversation/${activeConversationId}/messages?userId=${userId}&skip=0&take=20`
+        const userId = getUserId();
+
+        const messages: any[] = await ConversationApi.GetConversationMessages(
+          activeConversationId,
+          userId
         );
-        const messageGroups = formatConversationMessages(response.data);
+        const messageGroups = formatConversationMessages(messages);
         setMessages(messageGroups);
         setToggleScroll((prev) => !prev);
       } catch (error) {
@@ -89,10 +92,8 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
     hubConnection.on(RECEIVE_MESSAGE, receiveMessageHandler);
 
     const updateMessageStatus = async () => {
-      const userId = sessionStorage.getItem("userId");
-      const response = await axios.put(
-        `${CP_API_URL_DEV}/api/conversation/${activeConversationId}/messages/seen/${userId}`
-      );
+      const userId = getUserId();
+      await ConversationApi.UpdateMessageStatus(activeConversationId, userId);
       updateUnseenMessages(contactId, false);
     };
     updateMessageStatus();
@@ -162,7 +163,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
     if (activeConversationId)
       sendMessage(contactId, message, activeConversationId);
 
-    const userId = sessionStorage.getItem("userId");
+    const userId = getUserId();
     if (userId) setLastMessageOfConversation(message, false, null);
   };
 

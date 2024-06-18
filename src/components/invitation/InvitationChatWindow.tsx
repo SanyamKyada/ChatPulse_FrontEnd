@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import axios from "axios";
 import Picker from "emoji-picker-react";
 import ConversationHeader from "../Conversation/ConversationHeader";
-import { CP_API_URL_DEV } from "../../environment";
 import {
   FriendRequest,
   FriendRequestMessage,
@@ -11,20 +10,31 @@ import {
 import {
   getHubConnection,
   sendFriendRequest,
+  sendFriendRequestAccepted,
   sendFriendRequestMessage,
 } from "../../services/signalR/SignalRService";
 import { getGroupTitleFromDate } from "../../util/datetime";
 import { ConversationGroups } from "../../types/Conversation";
-import { RECEIVE_FRIEND_REQUEST_MESSAGE } from "../../services/signalR/constants";
+import {
+  RECEIVE_FRIEND_REQUEST_ACCEPTED,
+  RECEIVE_FRIEND_REQUEST_MESSAGE,
+} from "../../services/signalR/constants";
 import ConversationDivider from "./../Conversation/ConversationDivider";
 import ConversationItem from "./../Conversation/ConversationItem";
 import InvitationStatus from "./InvitationStatus";
+import { getUserId } from "../../util/auth";
+import { FriendRequestApi } from "../../axios";
 
 interface InvitationChatWindowProps extends PersonToInvite {
   friendRequestId: number | undefined;
   handleBackNavigation: () => void;
-  handleAfterSendFriendRequest: (friendRequestId) => void;
-  updateUnseenMessages: (senderUserId, shouldIncrease) => void;
+  handleAfterSendFriendRequest: (friendRequestId: number) => void;
+  handleAfterAcceptFriendRequest: (
+    friendRequestId: number,
+    conversationId: number,
+    isReqAcceptedByMe: boolean
+  ) => void;
+  updateUnseenMessages: (senderUserId: string, shouldIncrease: boolean) => void;
 }
 
 const CONTACT_IMAGE =
@@ -67,6 +77,7 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
   isRequestAlreadySent,
   handleBackNavigation,
   handleAfterSendFriendRequest,
+  handleAfterAcceptFriendRequest,
   updateUnseenMessages,
 }) => {
   console.log("%cInvitationChatWindow", "font-weight: bold; color: #dc3545; ");
@@ -78,7 +89,7 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
     undefined
   );
 
-  const userId = sessionStorage.getItem("userId");
+  const userId = getUserId();
   const isRequestSentByMe = friendRequest?.senderUserId === userId;
 
   const onEmojiClick = (emojiObject, event) => {
@@ -90,10 +101,9 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
   };
 
   const fetchFriendRequestMessages = useCallback(async () => {
-    const response = await axios.get(
-      `${CP_API_URL_DEV}/api/friend-request/${friendRequestId}/get-messages`
-    );
-    setFriendRequest(response.data);
+    const friendRequestData =
+      await FriendRequestApi.GetFriendRequestWithMessages(friendRequestId);
+    setFriendRequest(friendRequestData);
   }, [friendRequestId]);
 
   useEffect(() => {
@@ -114,11 +124,26 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
       // setLastMessageOfConversation(message, true, senderUserId);
     };
 
+    const receiveFriendRequestAcceptedHandler = (
+      friendRequestId,
+      conversationId
+    ) => {
+      handleAfterAcceptFriendRequest(friendRequestId, conversationId, false);
+    };
+
     const hubConnection = getHubConnection();
     hubConnection.on(RECEIVE_FRIEND_REQUEST_MESSAGE, receiveMessageHandler);
+    hubConnection.on(
+      RECEIVE_FRIEND_REQUEST_ACCEPTED,
+      receiveFriendRequestAcceptedHandler
+    );
 
     return () => {
       hubConnection.off(RECEIVE_FRIEND_REQUEST_MESSAGE, receiveMessageHandler);
+      hubConnection.off(
+        RECEIVE_FRIEND_REQUEST_ACCEPTED,
+        receiveFriendRequestAcceptedHandler
+      );
     };
   }, [
     friendRequestId,
@@ -143,6 +168,14 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
       return updatedRequest;
     });
   }, []);
+
+  const handleAcceptFriendRequest = async () => {
+    const conversationId = await FriendRequestApi.AcceptFriendRequest(
+      friendRequestId
+    );
+    handleAfterAcceptFriendRequest(friendRequestId, conversationId, true);
+    sendFriendRequestAccepted(friendRequestId, conversationId, personId);
+  };
 
   const handleKeyDown = (event) => {
     if (!(event.key === "Enter" && message.length)) return;
@@ -171,6 +204,7 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
   };
 
   console.log("isRequestSentByMe", isRequestSentByMe);
+  if (friendRequest?.friendRequestMessages) console.log(1);
 
   return (
     <div className="conversation active" id="conversation-1">
@@ -187,13 +221,17 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
           isRequestSentByMe={isRequestSentByMe}
           personName={personName}
           handleSendFriendRequest={handleSendFriendRequest}
+          handleAcceptFriendRequest={handleAcceptFriendRequest}
         />
         {friendRequest?.friendRequestMessages &&
           Object.entries(
-            formatConversationMessages(
-              friendRequest?.friendRequestMessages,
-              isRequestSentByMe
-            )
+            !friendRequest?.friendRequestMessages.length &&
+              friendRequest?.hasWaved
+              ? { [getGroupTitleFromDate(friendRequest.requestTimeStamp)]: [] }
+              : formatConversationMessages(
+                  friendRequest?.friendRequestMessages,
+                  isRequestSentByMe
+                )
           ).map(([date, conversations], index) => (
             <ConversationGroup
               key={date}

@@ -14,13 +14,14 @@ import {
   handleReceiveFriendRequest,
 } from "../services/signalR/SignalRService";
 import { isLoggedIn } from "../services/AuthService";
-import { CP_API_URL_DEV } from "../environment";
 import { PersonToInvite } from "../types/FriendRequest";
 import {
   RECEIVE_FRIEND_REQUEST_MESSAGE,
   RECEIVE_MESSAGE,
 } from "../services/signalR/constants";
 import InvitationChatWindow from "./invitation/InvitationChatWindow";
+import { ConversationApi } from "../axios";
+import { getUserId } from "../util/auth";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -57,6 +58,7 @@ const groupConversationsByTimestamp = (
         noOfUnseenMessages: conversation.numberOfUnseenMessages,
         isOnline: conversation.contact.isOnline,
         lastSeenTimestamp: conversation.contact.lastSeenTimestamp,
+        isWave: conversation.lastMessage.isWave,
       });
       return groups;
     },
@@ -115,15 +117,10 @@ const Content: React.FC = () => {
 
   useEffect(() => {
     const fetchConversations = async () => {
-      try {
-        const userId = sessionStorage.getItem("userId");
-        const response = await axios.get(
-          `${CP_API_URL_DEV}/api/conversation/${userId}/recent`
-        );
-        setRecentChats(response.data);
-      } catch (error) {
-        console.error(error);
-      }
+      const userId = getUserId();
+      const conversations: RecentChatAPIResponse =
+        await ConversationApi.GetRecentConversations(userId);
+      setRecentChats(conversations);
     };
 
     fetchConversations();
@@ -273,7 +270,6 @@ const Content: React.FC = () => {
   };
 
   const handleAfterSendFriendRequest = (friendRequestId: number) => {
-    debugger;
     setRecentChats((prevChats: RecentChatAPIResponse) => {
       const updatedChats = [...prevChats];
 
@@ -303,6 +299,37 @@ const Content: React.FC = () => {
 
     setPersonToInviteDetails({} as PersonToInvite);
     setFriendRequestId(friendRequestId);
+  };
+
+  const handleAfterAcceptFriendRequest = (
+    friendReqId: number,
+    convoId: number,
+    isReqAcceptedByMe: boolean = false
+  ) => {
+    setRecentChats((prevChats: RecentChatAPIResponse) => {
+      const conversationIndex = prevChats.findIndex(
+        (x) => x.friendRequestId == friendReqId
+      );
+      if (conversationIndex !== -1) {
+        const updatedConversation = {
+          ...prevChats[conversationIndex],
+        };
+
+        updatedConversation.conversationId = convoId;
+        updatedConversation.friendRequestId = null;
+        const updatedChats = [...prevChats];
+        updatedChats[conversationIndex] = updatedConversation;
+
+        if (
+          isReqAcceptedByMe ||
+          (!conversationId && friendRequestId == friendReqId)
+        )
+          setConversationId(convoId);
+        return updatedChats;
+      }
+
+      return prevChats;
+    });
   };
 
   const handleBackNavigationFromInviteBox = () => {
@@ -372,6 +399,7 @@ const Content: React.FC = () => {
             }
             handleBackNavigation={handleBackNavigationFromInviteBox}
             handleAfterSendFriendRequest={handleAfterSendFriendRequest}
+            handleAfterAcceptFriendRequest={handleAfterAcceptFriendRequest}
             updateUnseenMessages={updateUnseenMessages}
           />
         )}

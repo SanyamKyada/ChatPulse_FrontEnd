@@ -3,6 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 // import Loader from "../components/Loader";
 import "./Login.css";
 import Loader from "../ui/Loader";
+import CryptoJS from "crypto-js";
+import { AccountApi } from "../axios";
+import { LoginCredentials, LoginResponse } from "../types/Account";
+const aesKey = import.meta.env.VITE_AES_KEY;
 
 const Login: FC = () => {
   const [email, setEmail] = useState<string>("");
@@ -16,46 +20,28 @@ const Login: FC = () => {
     sessionStorage.removeItem("access_token");
   }, []);
 
-  const proceedLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const proceedLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {
       setIsLoading(true);
-
-      const inputobj = {
+      const userCred: LoginCredentials = {
         email: email,
         password: password,
       };
-      fetch("https://localhost:7003/api/account/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(inputobj),
-      })
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Login failed, Status code : " + res.status);
-          }
-          return res.json();
-        })
-        .then((resp) => {
-          console.log(resp);
-          if (!resp.jwtToken) {
-            debugger;
-            throw new Error("JWT token not found in response");
-          }
-          sessionStorage.setItem("email", email);
-          sessionStorage.setItem("userId", resp.userId);
-          sessionStorage.setItem("userN", resp.userN);
-          sessionStorage.setItem("access_token", resp.jwtToken);
-          sessionStorage.setItem("refreshToken", resp.refreshToken);
+      var userDetails: LoginResponse = await AccountApi.Login(userCred);
+      if (userDetails) {
+        if (!userDetails.jwtToken) {
+          throw new Error("JWT token not found in response");
+        }
+        sessionStorage.setItem("email", email);
+        sessionStorage.setItem("userId", userDetails.userId);
+        sessionStorage.setItem("userN", userDetails.userN);
+        sessionStorage.setItem("access_token", userDetails.jwtToken);
+        sessionStorage.setItem("refreshToken", userDetails.refreshToken);
 
-          navigate("/");
-        })
-        .catch((err) => {
-          console.error("Login Failed:", err.message);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+        navigate("/");
+      }
+      setIsLoading(false);
     }
   };
 

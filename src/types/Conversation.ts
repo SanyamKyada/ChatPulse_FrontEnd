@@ -23,6 +23,7 @@ interface LastMessage {
   content: string;
   timestamp: string;
   isFromCurrentUser: boolean;
+  isWave: boolean;
 }
 
 export interface ConversationApiResponse {

@@ -5,6 +5,7 @@ import React, {
   useState,
 } from "react";
 import { getHubConnection } from "../services/signalR/SignalRService";
+import { RECEIVE_TYPING_NOTIFICATION } from "../services/signalR/constants";
 
 interface TypingIndicatorProps {
   contactId: string;
@@ -51,10 +52,10 @@ const TypingIndicator = forwardRef<
     };
 
     const hubConnection = getHubConnection();
-    hubConnection.on("ReceiveTypingNotification", reciveNotificationHandler);
+    hubConnection.on(RECEIVE_TYPING_NOTIFICATION, reciveNotificationHandler);
 
     return () => {
-      hubConnection.off("ReceiveTypingNotification", reciveNotificationHandler);
+      hubConnection.off(RECEIVE_TYPING_NOTIFICATION, reciveNotificationHandler);
     };
   }, [contactId, timeoutId]);
 

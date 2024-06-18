@@ -6,19 +6,25 @@ import {
   BrowserRouter,
 } from "react-router-dom";
 import Home from "./pages/Home";
-// import Login from "./pages/Login";
 const Login = React.lazy(() => import("./pages/Login"));
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+// import { toast } from "react-toastify";
 
 // import Chat from "./components/Chat";
 
 const App: FC = function App() {
+  // toast.success("Hello");
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />}></Route>
-        <Route path="/login" element={<Login />}></Route>
-      </Routes>
-    </BrowserRouter>
+    <>
+      <ToastContainer />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />}></Route>
+          <Route path="/login" element={<Login />}></Route>
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 };
 

@@ -5,6 +5,7 @@ interface InvitationStatusProps {
   isRequestSentByMe: boolean;
   personName: string;
   handleSendFriendRequest: () => void;
+  handleAcceptFriendRequest: () => void;
 }
 
 const InvitationStatus: FC<InvitationStatusProps> = ({
@@ -12,6 +13,7 @@ const InvitationStatus: FC<InvitationStatusProps> = ({
   isRequestSentByMe,
   personName,
   handleSendFriendRequest,
+  handleAcceptFriendRequest,
 }) => {
   return (
     <div className="invitation-status">
@@ -33,7 +35,12 @@ const InvitationStatus: FC<InvitationStatusProps> = ({
       {isRequestAlreadySent && !isRequestSentByMe && (
         <div className="invitation-actions">
           <button className="invitation-action">Decline</button>
-          <button className="invitation-action">Accept</button>
+          <button
+            className="invitation-action"
+            onClick={handleAcceptFriendRequest}
+          >
+            Accept
+          </button>
         </div>
       )}
     </div>
