@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import ConversationGroup from "./ConversationGroup";
 import { ConversationGroups } from "../../types/Conversation";
 import ConversationForm from "./ConversationForm";
 import { getGroupTitleFromDate } from "../../util/datetime";
-import axios from "axios";
 import {
   getHubConnection,
   sendMessage,
@@ -13,9 +12,55 @@ import TypingIndicator from "../TypingIndicator";
 import { RECEIVE_MESSAGE } from "../../services/signalR/constants";
 import { getUserId } from "../../util/auth";
 import { ConversationApi } from "../../axios";
+import useDebounce from "../../hooks/useDebounce";
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
+
+const formatConversationMessages = (
+  existingGroups: ConversationGroups | null,
+  messages: any[]
+): ConversationGroups => {
+  let groups = existingGroups
+    ? new Map(Object.entries(existingGroups))
+    : new Map<
+        string,
+        {
+          id: string;
+          isMe: boolean;
+          imageURL: string;
+          message: string;
+          time: string;
+        }[]
+      >();
+
+  messages.forEach((message) => {
+    const groupKey = getGroupTitleFromDate(message.timestamp);
+    const newMessage = {
+      id: message.messageId,
+      isMe: message.isFromCurrentUser,
+      imageURL: CONTACT_IMAGE,
+      message: message.content,
+      time: new Date(message.timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    if (!groups.has(groupKey)) {
+      // If the group key doesn't exist, add it at the beginning
+      groups = new Map([[groupKey, [newMessage]], ...groups]);
+    } else {
+      // Add the new message at the beginning of the existing group
+      const groupMessages = groups.get(groupKey);
+      groupMessages.unshift(newMessage);
+      groups.set(groupKey, groupMessages);
+    }
+  });
+
+  // Convert the Map back to an object
+  return Object.fromEntries(groups);
+};
 
 type ConversationMainProps = {
   activeConversationId: number | undefined;
@@ -51,27 +96,62 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   const typeIndicatorRef = useRef<{ hideTypingIndicator: () => void } | null>(
     null
   );
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [skip, setSkip] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchConversationMessages = useCallback(async () => {
+    if (loading || !hasMore) return; // Prevent fetch if already loading or no more messages
+
+    setLoading(true);
+    try {
+      const userId = getUserId();
+      const fetchedMessages = await ConversationApi.GetConversationMessages(
+        activeConversationId,
+        userId,
+        skip
+      );
+      const messageGroups = formatConversationMessages(
+        messages,
+        fetchedMessages
+      );
+      setMessages(messageGroups);
+      if (fetchedMessages.length < 20) {
+        setHasMore(false);
+      } else {
+        setSkip((prev) => prev + 20);
+      }
+    } catch (error) {
+      console.error("Error fetching conversation messages:", error);
+    }
+    setLoading(false);
+  }, [activeConversationId, skip, hasMore]);
 
   useEffect(() => {
-    const fetchConversationMessages = async () => {
-      try {
+    const initFetchMessages = async () => {
+      if (activeConversationId) {
+        //To fetch initial messages when conversation changes
+        setSkip(0);
+        setMessages({});
+        setHasMore(true);
         const userId = getUserId();
-
-        const messages: any[] = await ConversationApi.GetConversationMessages(
+        const fetchedMessages = await ConversationApi.GetConversationMessages(
           activeConversationId,
-          userId
+          userId,
+          0,
+          40
         );
-        const messageGroups = formatConversationMessages(messages);
+        const messageGroups = formatConversationMessages(null, fetchedMessages);
         setMessages(messageGroups);
         setToggleScroll((prev) => !prev);
-      } catch (error) {
-        console.error("Error fetching conversation messages:", error);
+        if (fetchedMessages.length < 40) {
+          setHasMore(false);
+        } else {
+          setSkip(40);
+        }
       }
     };
-
-    if (activeConversationId) {
-      fetchConversationMessages();
-    }
+    initFetchMessages();
   }, [activeConversationId]);
 
   useEffect(() => {
@@ -103,30 +183,6 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
     };
   }, [contactId]);
 
-  const formatConversationMessages = (messages: any[]): ConversationGroups => {
-    const groups: ConversationGroups = {};
-
-    messages.forEach((message) => {
-      const groupKey = getGroupTitleFromDate(message.timestamp);
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-
-      groups[groupKey].push({
-        id: `conversation-${message.messageId}`,
-        isMe: message.isFromCurrentUser,
-        imageURL: CONTACT_IMAGE,
-        message: message.content,
-        time: new Date(message.timestamp).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      });
-    });
-
-    return groups;
-  };
-
   const setNewMessage = (message, isMe = false) => {
     setMessages((currentState) => {
       const updatedMessages = { ...currentState };
@@ -146,17 +202,15 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
       ];
       return updatedMessages;
     });
-  };
 
-  const keys = messages && Object.keys(messages);
-  const lastKey = keys && keys[keys.length - 1];
-  const todayMessages = lastKey && lastKey === "Today" ? messages[lastKey] : [];
+    setToggleScroll((prev) => !prev);
+  };
 
   useEffect(() => {
     if (chatWindowRef.current) {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
-  }, [toggleScroll, activeConversationId, todayMessages?.length]);
+  }, [toggleScroll, activeConversationId]);
 
   const handleSendMessage = (message) => {
     setNewMessage(message, true);
@@ -165,6 +219,20 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
 
     const userId = getUserId();
     if (userId) setLastMessageOfConversation(message, false, null);
+  };
+
+  const debouncedFetchConversationMessages = useDebounce(
+    fetchConversationMessages,
+    300
+  );
+  const handleScroll = () => {
+    if (chatWindowRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatWindowRef.current;
+      const scrollPercent = (scrollTop * 100) / scrollHeight;
+      if (scrollPercent < 30) {
+        debouncedFetchConversationMessages();
+      }
+    }
   };
 
   return (
@@ -176,7 +244,11 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
         profileImage={profileImage}
         handleBackNavigation={handleBackNavigation}
       />
-      <div className="conversation-main" ref={chatWindowRef}>
+      <div
+        className="conversation-main"
+        ref={chatWindowRef}
+        onScroll={handleScroll}
+      >
         {messages &&
           Object.entries(messages).map(([date, conversations]) => (
             <ConversationGroup

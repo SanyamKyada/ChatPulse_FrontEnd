@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Content from "../components/Content";
 import { useNavigate } from "react-router";
 import { startConnection } from "../services/signalR/SignalRService";
@@ -7,12 +7,14 @@ import { refreshAccessToken, decodeToken } from "../services/AuthService";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     let email = sessionStorage.getItem("email");
     if (email === "" || email === null) {
       navigate("/login");
     } else {
+      setIsAuthenticated(true);
       startConnection();
     }
 
@@ -35,6 +37,10 @@ const Home: React.FC = () => {
       }
     }
   }, []);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <section className="chat-section">

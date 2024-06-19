@@ -62,13 +62,16 @@ EncryptedAPIService.interceptors.response.use(
     }
   },
   (error) => {
-    if (error.response && error.response.status === 401) {
-      toast.error(
-        error.response.data.message || "Error while processing you request"
-      );
-    }
     if (error.code === "ERR_NETWORK") {
       toast.error(error.message || "Network error");
+    }
+    if (
+      (error.response && error.response.status === 401) ||
+      error.response.status === 400
+    ) {
+      toast.error(
+        error.response?.data?.message || "Error while processing you request"
+      );
     }
     console.error("Request error:", error.message);
     // return Promise.reject(error);

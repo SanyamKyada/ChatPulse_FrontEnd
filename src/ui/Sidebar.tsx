@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, startTransition } from "react";
 import { useNavigate } from "react-router";
 import SidebarProfile from "../components/SidebarProfile";
 
@@ -30,7 +30,9 @@ const Sidebar: React.FC = () => {
 
   const navigate = useNavigate();
   const handleLogout = () => {
-    navigate("/login");
+    startTransition(() => {
+      navigate("/login");
+    });
   };
 
   return (

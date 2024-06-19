@@ -8,8 +8,13 @@ export class Conversation {
     return response;
   }
 
-  async GetConversationMessages(conversationId: number, userId: string) {
-    const url = `conversation/${conversationId}/messages?userId=${userId}&skip=0&take=20`;
+  async GetConversationMessages(
+    conversationId: number,
+    userId: string,
+    skip: number,
+    take: number = 20
+  ) {
+    const url = `conversation/${conversationId}/messages?userId=${userId}&skip=${skip}&take=${take}`;
     const response: any[] = await AuthorizedAPIService.get(url);
     return response;
   }

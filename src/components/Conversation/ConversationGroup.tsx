@@ -37,15 +37,10 @@ const ConversationGroup: FC<{
 
   return (
     <ul className="conversation-wrapper">
-      {/* <div className="a">
-        <i className="b ri-chat-smile-3-line"></i>
-        <p className="c">Request samay for a chat</p>
-        <button className="d">Send Request</button>
-      </div> */}
       <ConversationDivider date={date} />
       {groupedConversations.map((group, index) => (
         <li
-          key={index}
+          key={"group_" + group[0].id}
           className={`conversation-item ${
             group[0].isMe ? "" : "conversation-item-left"
           }`}
@@ -58,9 +53,9 @@ const ConversationGroup: FC<{
             />
           </div>
           <div className="conversation-item-content">
-            {group.map((conversation, index) => (
+            {group.map((conversation, gindex) => (
               <ConversationItem
-                key={index}
+                key={conversation.id}
                 message={conversation.message}
                 time={conversation.time}
               />

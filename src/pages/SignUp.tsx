@@ -42,7 +42,7 @@ const SignUp: FC = () => {
       // toast(response.message);
 
       setIsLoading(false);
-      navigate("/login");
+      if (response.httpStatusCode === 200) navigate("/login");
     }
   };
 
