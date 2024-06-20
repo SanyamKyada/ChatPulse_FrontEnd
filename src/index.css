@@ -1026,10 +1026,13 @@ body {
     padding: 16px;
   }
   .content-messages {
-    margin-top: unset;
+    /* margin-top: unset; */
+    margin-top: 120px;
   }
   .mobile-content-sidebar-header {
     display: block;
+    position: fixed;
+    width: 100%;
   }
   .desktop-content-sidebar-header {
     display: none;
