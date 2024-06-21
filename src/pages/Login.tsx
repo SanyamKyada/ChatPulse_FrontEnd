@@ -16,8 +16,7 @@ const Login: FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    sessionStorage.clear();
-    sessionStorage.removeItem("access_token");
+    localStorage.clear();
   }, []);
 
   const proceedLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,16 +28,16 @@ const Login: FC = () => {
         password: password,
       };
       var userDetails: LoginResponse = await AccountApi.Login(userCred);
+
       if (userDetails) {
-        if (!userDetails.jwtToken) {
+        if (!userDetails.accessToken) {
           throw new Error("JWT token not found in response");
         }
-        sessionStorage.setItem("email", email);
-        sessionStorage.setItem("userId", userDetails.userId);
-        sessionStorage.setItem("userN", userDetails.userN);
-        sessionStorage.setItem("access_token", userDetails.jwtToken);
-        sessionStorage.setItem("refreshToken", userDetails.refreshToken);
 
+        localStorage.setItem(
+          "user",
+          JSON.stringify({ ...userDetails, email: email })
+        );
         navigate("/");
       }
       setIsLoading(false);

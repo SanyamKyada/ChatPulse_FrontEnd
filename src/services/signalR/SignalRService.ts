@@ -14,7 +14,6 @@ import {
 } from "./constants";
 const hubEndpoint = import.meta.env.VITE_DEV_HUB_URL;
 
-console.log(hubEndpoint);
 let hubCon;
 
 export const getHubConnection = () => {

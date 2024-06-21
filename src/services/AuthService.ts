@@ -1,12 +1,18 @@
 const devApiUrl = import.meta.env.VITE_DEV_API_URL;
 
-export const isLoggedIn = (): boolean =>
-  sessionStorage.getItem("access_token") !== null;
+export const getUser = () => {
+  return JSON.parse(localStorage.getItem("user"));
+};
+
+export const isLoggedIn = (): boolean => {
+  const { accessToken } = getUser();
+  return accessToken !== null;
+};
 
 export const isTokenExpired = (): boolean => {
-  const token = sessionStorage.getItem("access_token");
-  if (!token) return true; // Token not found
-  const decodedToken = JSON.parse(atob(token.split(".")[1]));
+  const { accessToken } = getUser();
+  if (!accessToken) return true; // Token not found
+  const decodedToken = JSON.parse(atob(accessToken.split(".")[1]));
   const currentTime = Date.now() / 1000;
   return decodedToken.exp < currentTime;
 };
@@ -14,25 +20,32 @@ export const isTokenExpired = (): boolean => {
 // Function to refresh the token
 export const refreshAccessToken = async () => {
   try {
-    const refreshToken = sessionStorage.getItem("refreshToken");
-    const jwtToken = sessionStorage.getItem("access_token");
+    const user = getUser();
+    const { accessToken, refreshToken } = user;
     const response = await fetch(`${devApiUrl}/account/refresh-token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ jwtToken, refreshToken }),
+      body: JSON.stringify({ accessToken, refreshToken }),
     });
     if (!response.ok) {
       throw new Error("Failed to refresh token");
     }
-    const { jwttoken, refreshtoken } = await response.json();
+    const { accessToken: token, refreshToken: refToken } =
+      await response.json();
 
-    sessionStorage.setItem("access_token", jwttoken);
-    sessionStorage.setItem("refreshToken", refreshtoken);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...user,
+        accessToken: token,
+        refreshToken: refToken,
+      })
+    );
 
     console.warn("token refreshed at:" + new Date().toLocaleTimeString());
-    return jwttoken;
+    return token;
   } catch (error) {
     console.error("Error refreshing token:", error);
     // Handle error

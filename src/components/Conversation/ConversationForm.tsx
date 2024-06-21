@@ -35,6 +35,7 @@ const ConversationForm: React.FC<{
   const handleButtonClick = () => {
     if (message.length) handleMessageSend(message);
     setMessage("");
+    messageRef.current?.focus();
   };
   return (
     <>

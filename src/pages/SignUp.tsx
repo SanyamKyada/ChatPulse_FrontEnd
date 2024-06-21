@@ -22,11 +22,6 @@ const SignUp: FC = () => {
 
   const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   sessionStorage.clear();
-  //   sessionStorage.removeItem("access_token");
-  // }, []);
-
   const proceedRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validate()) {

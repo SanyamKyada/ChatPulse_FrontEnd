@@ -1,7 +1,11 @@
+import { getUser } from "../services/AuthService";
+
 export function getAuthToken() {
-  return sessionStorage.getItem("access_token");
+  const { accessToken } = getUser();
+  return accessToken;
 }
 
 export function getUserId(): string {
-  return sessionStorage.getItem("userId");
+  const { userId } = getUser();
+  return userId;
 }

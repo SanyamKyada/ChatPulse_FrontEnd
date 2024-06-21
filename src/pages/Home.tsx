@@ -3,24 +3,45 @@ import Content from "../components/Content";
 import { useNavigate } from "react-router";
 import { startConnection } from "../services/signalR/SignalRService";
 import Sidebar from "../ui/Sidebar";
-import { refreshAccessToken, decodeToken } from "../services/AuthService";
+import {
+  refreshAccessToken,
+  decodeToken,
+  getUser,
+  isTokenExpired,
+} from "../services/AuthService";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    let email = sessionStorage.getItem("email");
-    if (email === "" || email === null) {
-      navigate("/login");
-    } else {
+    debugger;
+    const initAuth = async () => {
+      const user = getUser();
+      let accessToken = user?.accessToken;
+      if (
+        accessToken === "" ||
+        accessToken === null ||
+        accessToken === undefined
+      ) {
+        navigate("/login");
+      } else if (isTokenExpired()) {
+        const newAccessToken = await refreshAccessToken();
+        if (
+          newAccessToken === "" ||
+          newAccessToken === null ||
+          newAccessToken === undefined
+        ) {
+          navigate("/login");
+        } else {
+          accessToken = newAccessToken;
+        }
+      }
+
       setIsAuthenticated(true);
       startConnection();
-    }
 
-    const token = sessionStorage.getItem("access_token");
-    if (token) {
-      const tokenExp = decodeToken(token).exp;
+      const tokenExp = decodeToken(accessToken).exp;
       const currentTime = Math.floor(Date.now() / 1000);
       const remainingTime = tokenExp - currentTime;
       const intervalTime = remainingTime - 30; // Refresh token 30 seconds before expiration
@@ -35,7 +56,9 @@ const Home: React.FC = () => {
         );
         return () => clearInterval(tokenRefreshInterval);
       }
-    }
+    };
+
+    initAuth();
   }, []);
 
   if (!isAuthenticated) {

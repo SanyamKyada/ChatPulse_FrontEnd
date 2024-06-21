@@ -7,6 +7,7 @@ import { DirectorySearchResult, PersonToInvite } from "../types/FriendRequest";
 import CPDirectorySearchResult from "../components/CPDirectorySearchResult";
 import { getUserId } from "../util/auth";
 import { UserApi } from "../axios";
+import { getUser } from "../services/AuthService";
 
 const RecentChats: React.FC<{
   recentChatGroups: RecentChatGroups;
@@ -92,6 +93,8 @@ const RecentChats: React.FC<{
     </form>
   );
 
+  const { userName } = getUser();
+
   return (
     <div className="content-sidebar">
       <div className="mobile-content-sidebar-header">
@@ -103,9 +106,7 @@ const RecentChats: React.FC<{
               alt=""
             />
             <div>
-              <div className="conversation-user-name">
-                {sessionStorage.getItem("userN")}
-              </div>
+              <div className="conversation-user-name">{userName}</div>
               <div className="conversation-user-status online">
                 Share what you're upto
               </div>

@@ -1,7 +1,7 @@
 export interface LoginResponse {
   userId: string;
-  userN: string;
-  jwtToken: string;
+  userName: string;
+  accessToken: string;
   refreshToken: string;
 }
 
