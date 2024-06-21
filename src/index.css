@@ -1025,6 +1025,20 @@ body {
     display: none;
     padding: 16px;
   }
+  .conversation.active .conversation-top {
+    position: fixed;
+    top: 0;
+    width: 100%;
+  }
+  .conversation.active .conversation-main {
+    margin-top: 56px;
+    margin-bottom: 58px;
+  }
+  .conversation.active .conversation-form {
+    position: fixed;
+    bottom: 48px;
+    width: 100%;
+  }
   .content-messages {
     /* margin-top: unset; */
     margin-top: 120px;
