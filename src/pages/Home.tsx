@@ -15,7 +15,6 @@ const Home: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    debugger;
     const initAuth = async () => {
       const user = getUser();
       let accessToken = user?.accessToken;
