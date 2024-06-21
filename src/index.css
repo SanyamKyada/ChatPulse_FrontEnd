@@ -1029,6 +1029,7 @@ body {
     position: fixed;
     top: 0;
     width: 100%;
+    z-index: 9;
   }
   .conversation.active .conversation-main {
     margin-top: 56px;
