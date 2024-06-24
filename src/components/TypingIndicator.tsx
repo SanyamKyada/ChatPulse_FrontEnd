@@ -51,8 +51,13 @@ const TypingIndicator = forwardRef<
       }
     };
 
-    const hubConnection = getHubConnection();
-    hubConnection.on(RECEIVE_TYPING_NOTIFICATION, reciveNotificationHandler);
+    let hubConnection;
+
+    const initializeHandlers = async () => {
+      hubConnection = await getHubConnection();
+      hubConnection.on(RECEIVE_TYPING_NOTIFICATION, reciveNotificationHandler);
+    };
+    initializeHandlers();
 
     return () => {
       hubConnection.off(RECEIVE_TYPING_NOTIFICATION, reciveNotificationHandler);

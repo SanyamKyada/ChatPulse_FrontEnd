@@ -16,6 +16,7 @@ interface Contact {
   profileImage: string | null;
   isOnline: boolean;
   lastSeenTimestamp: string;
+  availabilityStatus: number;
 }
 
 interface LastMessage {

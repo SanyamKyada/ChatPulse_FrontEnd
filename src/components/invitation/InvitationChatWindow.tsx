@@ -75,6 +75,7 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
   isOnline,
   lastSeenTimestamp,
   isRequestAlreadySent,
+  availabilityStatus,
   handleBackNavigation,
   handleAfterSendFriendRequest,
   handleAfterAcceptFriendRequest,
@@ -107,14 +108,6 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
   }, [friendRequestId]);
 
   useEffect(() => {
-    if (friendRequestId) {
-      fetchFriendRequestMessages();
-    } else {
-      setFriendRequest(undefined);
-    }
-
-    updateUnseenMessages(personId, false);
-
     const receiveMessageHandler = (senderUserId, friendRequestId, message) => {
       if (friendRequestId === friendRequest?.id) {
         setNewMessage(message);
@@ -131,12 +124,26 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
       handleAfterAcceptFriendRequest(friendRequestId, conversationId, false);
     };
 
-    const hubConnection = getHubConnection();
-    hubConnection.on(RECEIVE_FRIEND_REQUEST_MESSAGE, receiveMessageHandler);
-    hubConnection.on(
-      RECEIVE_FRIEND_REQUEST_ACCEPTED,
-      receiveFriendRequestAcceptedHandler
-    );
+    let hubConnection;
+
+    const initializeHandlers = async () => {
+      hubConnection = await getHubConnection();
+      debugger;
+      hubConnection.on(RECEIVE_FRIEND_REQUEST_MESSAGE, receiveMessageHandler);
+      hubConnection.on(
+        RECEIVE_FRIEND_REQUEST_ACCEPTED,
+        receiveFriendRequestAcceptedHandler
+      );
+    };
+    initializeHandlers();
+
+    if (friendRequestId) {
+      fetchFriendRequestMessages();
+    } else {
+      setFriendRequest(undefined);
+    }
+
+    updateUnseenMessages(personId, false);
 
     return () => {
       hubConnection.off(RECEIVE_FRIEND_REQUEST_MESSAGE, receiveMessageHandler);
@@ -203,9 +210,6 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
     setMessage("");
   };
 
-  console.log("isRequestSentByMe", isRequestSentByMe);
-  if (friendRequest?.friendRequestMessages) console.log(1);
-
   return (
     <div className="conversation active" id="conversation-1">
       <ConversationHeader
@@ -213,6 +217,7 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
         onlineStatus={isOnline}
         lastSeenTimestamp={lastSeenTimestamp}
         profileImage={profileImage}
+        availabilityStatus={availabilityStatus}
         handleBackNavigation={handleBackNavigation}
       />
       <div className="conversation-main" style={{ position: "relative" }}>

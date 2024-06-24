@@ -11,12 +11,10 @@ const Sidebar: React.FC = () => {
   const [isProfileActive, setProfileActive] = useState(false);
 
   const toggleProfile = () => {
-    debugger;
     setProfileActive(!isProfileActive);
   };
 
   const handleOutsideClick = (e: MouseEvent) => {
-    debugger;
     const target = e.target as HTMLElement;
     const profileButton = document.querySelector(
       ".chat-sidebar-profile-toggle"

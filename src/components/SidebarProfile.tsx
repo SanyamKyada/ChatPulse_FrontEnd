@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { getUser } from "../services/AuthService";
 import { UserApi } from "../axios";
-import { updateAvailabilityStatus } from "../util/auth";
+import { getUserId, updateAvailabilityStatus } from "../util/auth";
+import { notifyAvailabilityStatusToContacts } from "../services/signalR/SignalRService";
 
 const status = ["Active", "Away", "Do not disturb", "Invisible"];
 
@@ -15,15 +16,16 @@ const SidebarProfile: React.FC<SidebarProfileProps> = ({ handleLogout }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loaderIndex, setLoaderIndex] = useState<number | null>(null);
 
-  const handleSelectAvailabilityStatus = async (statusId) => {
+  const handleSelectAvailabilityStatus = async (statusId: number) => {
     setIsLoading(true);
     setLoaderIndex(statusId);
-    const { userId } = getUser();
+    const userId = getUserId();
     var response = await UserApi.SetAvailabilityStatus(userId, statusId);
 
     if (response.statusCode === 200) {
       updateAvailabilityStatus(statusId);
       setAvailabilityStatusId(statusId);
+      notifyAvailabilityStatusToContacts(userId, statusId);
       setIsOpenSelectStatus(false);
     }
     setIsLoading(false);

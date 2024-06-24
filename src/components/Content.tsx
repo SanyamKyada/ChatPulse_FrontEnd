@@ -10,12 +10,14 @@ import { RecentChatGroups } from "../types/RecentChats";
 import { getGroupTitleFromDate } from "../util/datetime";
 import {
   getHubConnection,
+  handleContactAvailabilityStatusChange,
   handleContactStatusChange,
   handleReceiveFriendRequest,
 } from "../services/signalR/SignalRService";
 import { isLoggedIn } from "../services/AuthService";
 import { PersonToInvite } from "../types/FriendRequest";
 import {
+  RECEIVE_AVAILABILITY_STATUS_CHANGED,
   RECEIVE_FRIEND_REQUEST_MESSAGE,
   RECEIVE_MESSAGE,
 } from "../services/signalR/constants";
@@ -59,6 +61,7 @@ const groupConversationsByTimestamp = (
         isOnline: conversation.contact.isOnline,
         lastSeenTimestamp: conversation.contact.lastSeenTimestamp,
         isWave: conversation.lastMessage.isWave,
+        availabilityStatus: conversation.contact.availabilityStatus,
       });
       return groups;
     },
@@ -77,7 +80,6 @@ const getPersonDetails = (
       chat.conversationId === conversationId ||
       chat.friendRequestId === friendRequestId
   );
-
   return activeConversation
     ? {
         contactId: activeConversation.contact.contactId,
@@ -85,6 +87,7 @@ const getPersonDetails = (
         contactOnlineStatus: activeConversation.contact.isOnline,
         lastSeenTimestamp: activeConversation.contact.lastSeenTimestamp,
         profileImage: activeConversation.contact.profileImage,
+        availabilityStatus: activeConversation.contact.availabilityStatus,
       }
     : {
         contactId: personToInviteDetails.userId,
@@ -92,6 +95,7 @@ const getPersonDetails = (
         contactOnlineStatus: personToInviteDetails.isOnline,
         lastSeenTimestamp: personToInviteDetails.lastSeenTimestamp,
         profileImage: personToInviteDetails.profileImage,
+        availabilityStatus: personToInviteDetails.availabilityStatus,
       };
 };
 
@@ -176,6 +180,29 @@ const Content: React.FC = () => {
           return updatedChats;
         });
       });
+
+      handleContactAvailabilityStatusChange(
+        (userId: string, status: number) => {
+          setRecentChats((prevChats: RecentChatAPIResponse) => {
+            const conversationIndex = prevChats.findIndex(
+              (x) => x.contact.contactId == userId
+            );
+            if (conversationIndex !== -1) {
+              const updatedConversation = {
+                ...prevChats[conversationIndex],
+              };
+
+              updatedConversation.contact.availabilityStatus = status;
+
+              const updatedChats = [...prevChats];
+              updatedChats[conversationIndex] = updatedConversation;
+              return updatedChats;
+            }
+
+            return prevChats;
+          });
+        }
+      );
     }
   }, []);
 
@@ -187,6 +214,7 @@ const Content: React.FC = () => {
         updateUnseenMessages(senderUserId, true);
         setLastMessageOfConversation(message, true, senderUserId);
       };
+
       const receiveFriendReqMessageHandler = (
         senderUserId,
         friendRequestId,
@@ -196,17 +224,22 @@ const Content: React.FC = () => {
         setLastMessageOfConversation(message, true, senderUserId);
       };
 
-      const hubConnection = getHubConnection();
-      if (conversationId === undefined) {
-        //Handle receive message when no conversation is selected
-        hubConnection.on(RECEIVE_MESSAGE, receiveMessageHandler);
-      } else if (friendRequestId === undefined) {
-        //Handle receive friend request message when no friend request is selected
-        hubConnection.on(
-          RECEIVE_FRIEND_REQUEST_MESSAGE,
-          receiveFriendReqMessageHandler
-        );
-      }
+      let hubConnection;
+
+      const initializeHandlers = async () => {
+        hubConnection = await getHubConnection();
+        if (conversationId === undefined) {
+          hubConnection.on(RECEIVE_MESSAGE, receiveMessageHandler); //Handle receive message when no conversation is selected
+        } else if (friendRequestId === undefined) {
+          //Handle receive friend request message when no friend request is selected
+          hubConnection.on(
+            RECEIVE_FRIEND_REQUEST_MESSAGE,
+            receiveFriendReqMessageHandler
+          );
+        }
+      };
+      initializeHandlers();
+
       return () => {
         hubConnection.off(RECEIVE_MESSAGE, receiveMessageHandler);
         hubConnection.off(
@@ -378,6 +411,7 @@ const Content: React.FC = () => {
           contactName={personDetails.contactName}
           lastSeenTimestamp={personDetails.lastSeenTimestamp}
           profileImage={personDetails.profileImage}
+          availabilityStatus={personDetails.availabilityStatus}
           handleBackNavigation={SetConversationId}
           updateUnseenMessages={updateUnseenMessages}
           setLastMessageOfConversation={setLastMessageOfConversation}
@@ -392,6 +426,7 @@ const Content: React.FC = () => {
             profileImage={personDetails.profileImage}
             isOnline={personDetails.contactOnlineStatus}
             lastSeenTimestamp={personDetails.lastSeenTimestamp}
+            availabilityStatus={personDetails.availabilityStatus}
             isRequestAlreadySent={
               !conversationId &&
               !!friendRequestId &&

@@ -10,6 +10,7 @@ export interface RecentChat {
   isOnline: boolean;
   lastSeenTimestamp: string;
   isWave: boolean;
+  availabilityStatus: number;
 }
 
 export interface RecentChatGroups {

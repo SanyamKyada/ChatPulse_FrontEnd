@@ -6,10 +6,11 @@ import Loader from "../ui/Loader";
 import CryptoJS from "crypto-js";
 import { AccountApi } from "../axios";
 import { LoginCredentials, LoginResponse } from "../types/Account";
+import { stopHubConnection } from "../services/signalR/SignalRService";
 const aesKey = import.meta.env.VITE_AES_KEY;
 
 const Login: FC = () => {
-  const [email, setEmail] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -17,6 +18,7 @@ const Login: FC = () => {
 
   useEffect(() => {
     localStorage.clear();
+    stopHubConnection();
   }, []);
 
   const proceedLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -24,7 +26,7 @@ const Login: FC = () => {
     if (validate()) {
       setIsLoading(true);
       const userCred: LoginCredentials = {
-        userName: email,
+        userName: userName,
         password: password,
       };
       var userDetails: LoginResponse = await AccountApi.Login(userCred);
@@ -34,10 +36,7 @@ const Login: FC = () => {
           throw new Error("JWT token not found in response");
         }
 
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ ...userDetails, email: email })
-        );
+        localStorage.setItem("user", JSON.stringify(userDetails));
         navigate("/");
       }
       setIsLoading(false);
@@ -46,7 +45,7 @@ const Login: FC = () => {
 
   const validate = () => {
     let result = true;
-    if (email === "" || email === null) {
+    if (userName === "" || userName === null) {
       result = false;
       console.log("Please Enter Email");
     }
@@ -70,8 +69,8 @@ const Login: FC = () => {
                 placeholder="Username"
                 required
                 id="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
                 style={{ boxSizing: "unset" }}
               />
               <i className="ri-user-fill"></i>

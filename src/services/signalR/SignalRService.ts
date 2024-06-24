@@ -11,64 +11,78 @@ import {
   SEND_FRIEND_REQUEST_MESSAGE,
   SEND_MESSAGE,
   USER_STATUS_CHANGED,
+  SEND_AVAILABILITY_STATUS_CHANGED,
+  RECEIVE_AVAILABILITY_STATUS_CHANGED,
 } from "./constants";
+
 const hubEndpoint = import.meta.env.VITE_DEV_HUB_URL;
 
-let hubCon;
+let hubCon: signalR.HubConnection | null = null;
 
-export const getHubConnection = () => {
+const createHubConnection = (token: string) => {
+  return new signalR.HubConnectionBuilder()
+    .withUrl(hubEndpoint, {
+      accessTokenFactory: () => token,
+    })
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
+};
+
+const getHubConnection = async (): Promise<signalR.HubConnection | null> => {
   const token = getAuthToken();
-  // if (!hubCon && token) {
-  if (token && (!hubCon || (hubCon && isTokenExpired()))) {
-    hubCon = new signalR.HubConnectionBuilder()
-      // .withUrl(`${hubEndpoint}?access_token=${token}`)
-      .withUrl(hubEndpoint, {
-        accessTokenFactory: () => {
-          return token;
-        },
-      })
-      .configureLogging(signalR.LogLevel.Information)
-      .build();
+  if (!token) return null;
+
+  if (!hubCon || (hubCon && isTokenExpired())) {
+    hubCon = createHubConnection(token);
   }
   return hubCon;
 };
 
-export const startConnection = async () => {
+const startConnection = async (): Promise<void> => {
   try {
-    const hubConnection = getHubConnection();
-    await hubConnection?.start().catch(function (e) {
-      debugger;
-    });
-    console.log(
-      "%cSignalR Connected!",
-      "line-height: 1.5; font-weight: bold; color: #28a745;"
-    );
+    const hubConnection = await getHubConnection();
+    if (hubConnection) {
+      await hubConnection.start();
+      console.log(
+        "%cSignalR Connected!",
+        "line-height: 1.5; font-weight: bold; color: #28a745;"
+      );
+    }
   } catch (err) {
-    debugger;
     console.error("Error while establishing SignalR connection:", err);
-    if (err.includes("401") || isTokenExpired()) {
+    if (
+      err.toString().includes("401") ||
+      err.toString().includes("failed to complete negotiation") ||
+      isTokenExpired()
+    ) {
       await refreshAccessToken();
     }
     await startConnection();
   }
 };
 
-export const sendMessage = async (
-  receiverUserId: string,
-  message: string,
-  activeConversationId: number
-) => {
-  try {
-    const hubConnection = getHubConnection();
-    await hubConnection.invoke(
-      SEND_MESSAGE,
-      receiverUserId,
-      message,
-      activeConversationId
+const stopHubConnection = async (): Promise<void> => {
+  if (hubCon) {
+    await hubCon.stop();
+    hubCon = null;
+    console.log(
+      "%cSignalR Disconnected!",
+      "line-height: 1.5; font-weight: bold; color: #dc3545;"
     );
+  }
+};
+
+const invokeHubMethod = async (
+  methodName: string,
+  ...args: any[]
+): Promise<void> => {
+  try {
+    const hubConnection = await getHubConnection();
+    if (hubConnection) {
+      await hubConnection.invoke(methodName, ...args);
+    }
   } catch (err) {
-    debugger;
-    console.error("Error while sending message:", err);
+    console.error(`Error while invoking ${methodName}:`, err);
     if (isTokenExpired()) {
       await refreshAccessToken();
     }
@@ -76,38 +90,61 @@ export const sendMessage = async (
   }
 };
 
-export const handleContactStatusChange = (
-  callback: (p1: string, p2: boolean) => void
+const sendMessage = (
+  receiverUserId: string,
+  message: string,
+  activeConversationId: number
 ) => {
-  const hubConnection = getHubConnection();
-  hubConnection.on(USER_STATUS_CHANGED, (userId, isOnline) => {
-    callback(userId, isOnline);
+  return invokeHubMethod(
+    SEND_MESSAGE,
+    receiverUserId,
+    message,
+    activeConversationId
+  );
+};
+
+const notifyAvailabilityStatusToContacts = (userId: string, status: number) => {
+  return invokeHubMethod(SEND_AVAILABILITY_STATUS_CHANGED, {
+    userId,
+    status,
   });
 };
 
-export const NotifyTypingToContacts = async () => {
-  try {
-    const hubConnection = getHubConnection();
-    await hubConnection.invoke(NOTIFY_TYPING);
-  } catch (error) {}
+const handleContactAvailabilityStatusChange = async (
+  callback: (userId: string, status: number) => void
+) => {
+  const hubConnection = await getHubConnection();
+  hubConnection?.on(RECEIVE_AVAILABILITY_STATUS_CHANGED, callback);
 };
 
-export const sendFriendRequest = async (
-  receiverUserId: string,
-  HasWaved: boolean,
-  message: string | null,
-  callback: (p1: number) => void
+const handleContactStatusChange = async (
+  callback: (userId: string, isOnline: boolean) => void
 ) => {
+  const hubConnection = await getHubConnection();
+  hubConnection?.on(USER_STATUS_CHANGED, callback);
+};
+
+const notifyTypingToContacts = () => {
+  return invokeHubMethod(NOTIFY_TYPING);
+};
+
+const sendFriendRequest = async (
+  receiverUserId: string,
+  hasWaved: boolean,
+  message: string | null,
+  callback: (friendRequestId: number) => void
+): Promise<void> => {
   try {
-    const hubConnection = getHubConnection();
-    const friendRequestId = await hubConnection.invoke(SEND_FRIEND_REQUEST, {
-      receiverUserId,
-      HasWaved,
-      message,
-    });
-    callback(friendRequestId);
+    const hubConnection = await getHubConnection();
+    if (hubConnection) {
+      const friendRequestId = await hubConnection.invoke(SEND_FRIEND_REQUEST, {
+        receiverUserId,
+        hasWaved,
+        message,
+      });
+      callback(friendRequestId);
+    }
   } catch (err) {
-    debugger;
     console.error(
       `Error while sending friend request to user ${receiverUserId}:`,
       err
@@ -115,80 +152,63 @@ export const sendFriendRequest = async (
   }
 };
 
-export const handleReceiveFriendRequest = (
-  callback: (p1: number, p2: any) => void
+const handleReceiveFriendRequest = async (
+  callback: (friendRequestId: number, senderUser: any) => void
 ) => {
-  const hubConnection = getHubConnection();
-  hubConnection.on(RECEIVE_FRIEND_REQUEST, (friendRequestId, senderUser) => {
-    callback(friendRequestId, senderUser);
-  });
+  const hubConnection = await getHubConnection();
+  hubConnection?.on(RECEIVE_FRIEND_REQUEST, callback);
 };
 
-export const sendFriendRequestMessage = async (
+const sendFriendRequestMessage = (
   friendRequestId: number,
   receiverUserId: string,
   message: string
 ) => {
-  try {
-    const hubConnection = getHubConnection();
-    await hubConnection.invoke(
-      SEND_FRIEND_REQUEST_MESSAGE,
-      friendRequestId,
-      receiverUserId,
-      message
-    );
-  } catch (err) {
-    debugger;
-    console.error(
-      `Error while sending friend request message to user ${receiverUserId}:`,
-      err
-    );
-  }
-};
-
-export const handleReceiveFriendRequestMessage = (
-  callback: (p1: number, p2: string) => void
-) => {
-  const hubConnection = getHubConnection();
-  hubConnection.on(
-    RECEIVE_FRIEND_REQUEST_MESSAGE,
-    (friendRequestId, message) => {
-      callback(friendRequestId, message);
-    }
+  return invokeHubMethod(
+    SEND_FRIEND_REQUEST_MESSAGE,
+    friendRequestId,
+    receiverUserId,
+    message
   );
 };
 
-export const sendFriendRequestAccepted = async (
+const handleReceiveFriendRequestMessage = async (
+  callback: (friendRequestId: number, message: string) => void
+) => {
+  const hubConnection = await getHubConnection();
+  hubConnection?.on(RECEIVE_FRIEND_REQUEST_MESSAGE, callback);
+};
+
+const sendFriendRequestAccepted = (
   friendRequestId: number,
   conversationId: number,
   receiverUserId: string
 ) => {
-  try {
-    debugger;
-    const hubConnection = getHubConnection();
-    await hubConnection.invoke(
-      SEND_FRIEND_REQUEST_ACCEPTED,
-      friendRequestId,
-      conversationId,
-      receiverUserId
-    );
-  } catch (err) {
-    debugger;
-    console.error(
-      `Error while sending friend request accepted event to user ${receiverUserId}:`,
-      err
-    );
-  }
+  return invokeHubMethod(
+    SEND_FRIEND_REQUEST_ACCEPTED,
+    friendRequestId,
+    conversationId,
+    receiverUserId
+  );
 };
 
-// export const handleReceiveFriendRequestAccepted = (
-//   callback: (p1: number, p2: number) => void
-// ) => {
+// export const handleReceiveFriendRequestAccepted = (callback: (friendRequestId: number, conversationId: number) => void) => {
 //   const hubConnection = getHubConnection();
-//   hubConnection.on(
-//     RECEIVE_FRIEND_REQUEST_ACCEPTED,
-//     (friendRequestId, conversationId) => {
-//       callback(friendRequestId, conversationId);
-//     }
-//   );
+//   hubConnection?.on(RECEIVE_FRIEND_REQUEST_ACCEPTED, callback);
 // };
+
+export {
+  getHubConnection,
+  startConnection,
+  stopHubConnection,
+  sendMessage,
+  notifyAvailabilityStatusToContacts,
+  handleContactAvailabilityStatusChange,
+  handleContactStatusChange,
+  notifyTypingToContacts,
+  sendFriendRequest,
+  handleReceiveFriendRequest,
+  handleReceiveFriendRequestMessage,
+  sendFriendRequestMessage,
+  sendFriendRequestAccepted,
+};

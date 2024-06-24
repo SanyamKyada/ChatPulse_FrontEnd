@@ -5,6 +5,7 @@ export interface PersonToInvite {
   isOnline: boolean;
   lastSeenTimestamp: string;
   isRequestAlreadySent: boolean;
+  availabilityStatus: number;
 }
 
 export type DirectorySearchResult = PersonToInvite[];

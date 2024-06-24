@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import Picker from "emoji-picker-react";
-import { NotifyTypingToContacts } from "../../services/signalR/SignalRService";
+import { notifyTypingToContacts } from "../../services/signalR/SignalRService";
 
 const ConversationForm: React.FC<{
   activeConversationId: number | undefined;
@@ -28,7 +28,7 @@ const ConversationForm: React.FC<{
       if (message.length) handleMessageSend(message);
       setMessage("");
     } else {
-      NotifyTypingToContacts();
+      notifyTypingToContacts();
     }
   };
 

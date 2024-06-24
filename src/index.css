@@ -600,6 +600,12 @@ li.status-item > span.icon.status-4 {
 .conversation-user-status.online::before {
   background-color: var(--emerald-500);
 }
+.conversation-user-status.away::before {
+  background-color: #ffc200;
+}
+.conversation-user-status.do-not-disturb::before {
+  background-color: #ff6c6c;
+}
 .conversation-buttons {
   display: flex;
   align-items: center;

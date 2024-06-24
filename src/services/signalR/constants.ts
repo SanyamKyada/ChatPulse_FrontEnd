@@ -9,3 +9,6 @@ export const SEND_FRIEND_REQUEST_MESSAGE = "SendFriendRequestMessage";
 export const RECEIVE_FRIEND_REQUEST_MESSAGE = "ReceiveFriendRequestMessage";
 export const SEND_FRIEND_REQUEST_ACCEPTED = "SendFriendRequestAccepted";
 export const RECEIVE_FRIEND_REQUEST_ACCEPTED = "ReceiveFriendRequestAccepted";
+export const SEND_AVAILABILITY_STATUS_CHANGED = "SendAvailabilityStatusChanged";
+export const RECEIVE_AVAILABILITY_STATUS_CHANGED =
+  "ReceiveAvailabilityStatusChanged";

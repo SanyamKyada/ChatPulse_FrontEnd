@@ -69,6 +69,7 @@ type ConversationMainProps = {
   onlineStatus: boolean;
   lastSeenTimestamp: string;
   profileImage: string | null;
+  availabilityStatus: number;
   handleBackNavigation: (p) => void;
   updateUnseenMessages: (p1: string, p2: boolean) => void;
   setLastMessageOfConversation: (
@@ -85,6 +86,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   onlineStatus,
   lastSeenTimestamp,
   profileImage,
+  availabilityStatus,
   handleBackNavigation,
   updateUnseenMessages,
   setLastMessageOfConversation,
@@ -155,6 +157,13 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
   }, [activeConversationId]);
 
   useEffect(() => {
+    const updateMessageStatus = async () => {
+      const userId = getUserId();
+      await ConversationApi.UpdateMessageStatus(activeConversationId, userId);
+      updateUnseenMessages(contactId, false);
+    };
+    updateMessageStatus();
+
     const receiveMessageHandler = (senderUserId, message) => {
       if (senderUserId === contactId) {
         setNewMessage(message);
@@ -168,14 +177,15 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
       setLastMessageOfConversation(message, true, senderUserId);
     };
 
-    const hubConnection = getHubConnection();
-    hubConnection.on(RECEIVE_MESSAGE, receiveMessageHandler);
+    let hubConnection;
 
-    const updateMessageStatus = async () => {
-      const userId = getUserId();
-      await ConversationApi.UpdateMessageStatus(activeConversationId, userId);
-      updateUnseenMessages(contactId, false);
+    const initializeHandlers = async () => {
+      hubConnection = await getHubConnection();
+      hubConnection.on(RECEIVE_MESSAGE, receiveMessageHandler);
     };
+
+    initializeHandlers();
+
     updateMessageStatus();
 
     return () => {
@@ -242,6 +252,7 @@ const ConversationMain: React.FC<ConversationMainProps> = ({
         onlineStatus={onlineStatus}
         lastSeenTimestamp={lastSeenTimestamp}
         profileImage={profileImage}
+        availabilityStatus={availabilityStatus}
         handleBackNavigation={handleBackNavigation}
       />
       <div

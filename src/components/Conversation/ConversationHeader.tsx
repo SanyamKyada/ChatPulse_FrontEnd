@@ -7,11 +7,13 @@ const ConversationHeader: React.FC<{
   onlineStatus: boolean;
   lastSeenTimestamp: string;
   profileImage: string | null;
+  availabilityStatus: number;
 }> = ({
   contactName,
   onlineStatus,
   lastSeenTimestamp,
   profileImage,
+  availabilityStatus,
   handleBackNavigation,
 }) => {
   console.log(
@@ -39,6 +41,29 @@ const ConversationHeader: React.FC<{
     }
   }, [lastSeenTimestamp]);
 
+  const AvailabilityStatusElement =
+    availabilityStatus && availabilityStatus !== 4 ? (
+      <div
+        className={`conversation-user-status ${
+          availabilityStatus === 1
+            ? onlineStatus
+              ? "online"
+              : "offline"
+            : availabilityStatus === 2
+            ? "away"
+            : "do-not-disturb"
+        }`}
+      >
+        {availabilityStatus === 1
+          ? onlineStatus
+            ? "online"
+            : lastActivity
+          : availabilityStatus === 2
+          ? "Away"
+          : "Do not disturb"}
+      </div>
+    ) : null;
+
   return (
     <div className="conversation-top">
       <button
@@ -58,13 +83,7 @@ const ConversationHeader: React.FC<{
         )}
         <div>
           <div className="conversation-user-name">{contactName}</div>
-          <div
-            className={`conversation-user-status ${
-              onlineStatus ? "online" : "offline"
-            }`}
-          >
-            {onlineStatus ? "online" : lastActivity}
-          </div>
+          {AvailabilityStatusElement}
         </div>
       </div>
       <div className="conversation-buttons">

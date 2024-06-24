@@ -4,6 +4,7 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   availabilityStatus: number;
+  email: string;
 }
 
 export interface RegisterResponse {
