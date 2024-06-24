@@ -1,4 +1,9 @@
-import React, { useEffect, useState, startTransition } from "react";
+import React, {
+  useEffect,
+  useState,
+  startTransition,
+  useLayoutEffect,
+} from "react";
 import { useNavigate } from "react-router";
 import SidebarProfile from "../components/SidebarProfile";
 
@@ -6,21 +11,33 @@ const Sidebar: React.FC = () => {
   const [isProfileActive, setProfileActive] = useState(false);
 
   const toggleProfile = () => {
+    debugger;
     setProfileActive(!isProfileActive);
   };
 
   const handleOutsideClick = (e: MouseEvent) => {
+    debugger;
     const target = e.target as HTMLElement;
     const profileButton = document.querySelector(
       ".chat-sidebar-profile-toggle"
     );
 
-    if (profileButton && !profileButton.contains(target)) {
+    // if (profileButton && !profileButton.contains(target)) {
+    //   setProfileActive(false);
+    // }
+    const sidebarProfile = document.querySelector(
+      ".chat-sidebar-profile-dropdown"
+    );
+    if (
+      profileButton &&
+      !profileButton.contains(target) &&
+      (!sidebarProfile.contains(target) || target.className === "ri-close-line")
+    ) {
       setProfileActive(false);
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.addEventListener("click", handleOutsideClick);
 
     return () => {
@@ -75,11 +92,7 @@ const Sidebar: React.FC = () => {
             />
           </button>
           <ul className="chat-sidebar-profile-dropdown">
-            <SidebarProfile
-              userName="Sanyam Kyada -ZWS"
-              userEmail="sayam.kyada@zobiwebsolutions.com"
-              handleLogout={handleLogout}
-            />
+            <SidebarProfile handleLogout={handleLogout} />
           </ul>
         </li>
       </ul>

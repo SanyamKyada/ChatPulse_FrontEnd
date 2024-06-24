@@ -26,4 +26,13 @@ export class User {
       }
     }
   }
+
+  async SetAvailabilityStatus(userId: string, Status: number): Promise<any> {
+    const url = `user/set-availability-status`;
+    const response: any = await AuthorizedAPIService.post(url, {
+      userId,
+      Status,
+    });
+    return response;
+  }
 }

@@ -1,16 +1,41 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { getUser } from "../services/AuthService";
+import { UserApi } from "../axios";
+import { updateAvailabilityStatus } from "../util/auth";
+
+const status = ["Active", "Away", "Do not disturb", "Invisible"];
 
 interface SidebarProfileProps {
-  userName: string;
-  userEmail: string;
   handleLogout: () => void;
 }
 
-const SidebarProfile: React.FC<SidebarProfileProps> = ({
-  userName,
-  userEmail,
-  handleLogout,
-}) => {
+const SidebarProfile: React.FC<SidebarProfileProps> = ({ handleLogout }) => {
+  const [isOpenSelectStatus, setIsOpenSelectStatus] = useState<boolean>(false);
+  const [availabilityStatusId, setAvailabilityStatusId] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loaderIndex, setLoaderIndex] = useState<number | null>(null);
+
+  const handleSelectAvailabilityStatus = async (statusId) => {
+    setIsLoading(true);
+    setLoaderIndex(statusId);
+    const { userId } = getUser();
+    var response = await UserApi.SetAvailabilityStatus(userId, statusId);
+
+    if (response.statusCode === 200) {
+      updateAvailabilityStatus(statusId);
+      setAvailabilityStatusId(statusId);
+      setIsOpenSelectStatus(false);
+    }
+    setIsLoading(false);
+    setLoaderIndex(null);
+  };
+
+  const { userName, email, availabilityStatus } = getUser();
+
+  useEffect(() => {
+    setAvailabilityStatusId(availabilityStatus);
+  }, []);
+
   return (
     <div className="sidebar-user-profile">
       <div className="profile-header">
@@ -33,7 +58,7 @@ const SidebarProfile: React.FC<SidebarProfileProps> = ({
           <li>
             <div>
               <div className="n">{userName}</div>
-              <div className="e">{userEmail}</div>
+              <div className="e">{email}</div>
             </div>
             <div className="sh">Share what you're upto</div>
           </li>
@@ -43,11 +68,101 @@ const SidebarProfile: React.FC<SidebarProfileProps> = ({
             </button>
           </li>
         </ul>
-        <ul className="user-status">
-          <li className="icon">
-            <span></span>
+        <ul
+          className={`availability-status ${
+            isOpenSelectStatus ? "hidden" : ""
+          }`}
+          onClick={() => setIsOpenSelectStatus(true)}
+        >
+          <li className="icon status-item">
+            <span className={`icon status-${availabilityStatusId}`}></span>
+            <span className="text">{status[availabilityStatusId - 1]}</span>
+            <span className="checkmark">
+              <i className="ri-arrow-down-s-line"></i>
+            </span>
           </li>
-          <li className="text">Active</li>
+        </ul>
+        <ul
+          className={`availability-status ${
+            isOpenSelectStatus ? "" : "hidden"
+          }`}
+        >
+          <li
+            className="status-item"
+            onClick={() => handleSelectAvailabilityStatus(1)}
+          >
+            <span className="icon status-1"></span>
+            <span className="text">Active</span>
+            <span
+              className={`checkmark ${
+                availabilityStatusId === 1 ? "" : "hidden"
+              }`}
+            >
+              <i className="ri-check-line"></i>
+            </span>
+            {isLoading && loaderIndex === 1 && (
+              <span className="status-loader">
+                <i className="ri-loader-4-line"></i>
+              </span>
+            )}
+          </li>
+          <li
+            className="status-item"
+            onClick={() => handleSelectAvailabilityStatus(2)}
+          >
+            <span className="icon status-2"></span>
+            <span className="text">Away</span>
+            <span
+              className={`checkmark ${
+                availabilityStatusId === 2 ? "" : "hidden"
+              }`}
+            >
+              <i className="ri-check-line"></i>
+            </span>
+            {isLoading && loaderIndex === 2 && (
+              <span className="status-loader">
+                <i className="ri-loader-4-line"></i>
+              </span>
+            )}
+          </li>
+          <li
+            className="status-item"
+            onClick={() => handleSelectAvailabilityStatus(3)}
+          >
+            <span className="icon status-3"></span>
+            <span className="text">Do not disturb</span>
+            <span
+              className={`checkmark ${
+                availabilityStatusId === 3 ? "" : "hidden"
+              }`}
+            >
+              <i className="ri-check-line"></i>
+            </span>
+            {isLoading && loaderIndex === 3 && (
+              <span className="status-loader">
+                <i className="ri-loader-4-line"></i>
+              </span>
+            )}
+          </li>
+          <li
+            className="status-item"
+            onClick={() => handleSelectAvailabilityStatus(4)}
+          >
+            <span className="icon status-4"></span>
+            <span className="text">Invisible</span>
+            <span
+              className={`checkmark ${
+                availabilityStatusId === 4 ? "" : "hidden"
+              }`}
+            >
+              <i className="ri-check-line"></i>
+            </span>
+            {isLoading && loaderIndex === 4 && (
+              <span className="status-loader">
+                <i className="ri-loader-4-line"></i>
+              </span>
+            )}
+          </li>
         </ul>
         <ul className="share-and-invite">
           <li className="share">
