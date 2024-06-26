@@ -1,4 +1,6 @@
 interface ImportMetaEnv {
-  VITE_DEV_API_URL: string;
-  VITE_DEV_HUB_URL: string;
+  VITE_API_URL: string;
+  VITE_HUB_URL: string;
+  VITE_IMAGES_URL: string;
+  VITE_AES_KEY: string;
 }

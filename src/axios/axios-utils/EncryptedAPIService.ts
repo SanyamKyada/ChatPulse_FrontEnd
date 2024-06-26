@@ -3,7 +3,7 @@ import CryptoJS from "crypto-js";
 import { toast } from "react-toastify";
 
 const aesKey = import.meta.env.VITE_AES_KEY;
-const devApiUrl = import.meta.env.VITE_DEV_API_URL;
+const baseApiUrl = import.meta.env.VITE_API_URL;
 
 const encryptData = (data) => {
   const key = CryptoJS.enc.Utf8.parse(aesKey);
@@ -31,7 +31,7 @@ const decryptData = (combinedData) => {
 };
 
 const EncryptedAPIService = axios.create({
-  baseURL: devApiUrl,
+  baseURL: baseApiUrl,
   headers: {
     "Content-Type": "application/json",
   },

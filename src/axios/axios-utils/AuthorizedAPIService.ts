@@ -9,7 +9,7 @@ import axios, {
 import { toast } from "react-toastify";
 import { getAuthToken } from "../../util/auth";
 
-const devApiUrl = import.meta.env.VITE_DEV_API_URL;
+const baseApiUrl = import.meta.env.VITE_API_URL;
 
 const getTenant = () => localStorage.getItem("tenant");
 const getToken = () => {
@@ -44,7 +44,7 @@ const networkError = (message) => {
 };
 
 export const AuthorizedAPIService = axios.create({
-  baseURL: devApiUrl,
+  baseURL: baseApiUrl,
   // timeout: 5000,
   headers: {
     "Content-Type": "application/json",

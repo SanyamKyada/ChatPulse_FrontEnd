@@ -15,7 +15,7 @@ import {
   RECEIVE_AVAILABILITY_STATUS_CHANGED,
 } from "./constants";
 
-const hubEndpoint = import.meta.env.VITE_DEV_HUB_URL;
+const hubEndpoint = import.meta.env.VITE_HUB_URL;
 
 let hubCon: signalR.HubConnection | null = null;
 
