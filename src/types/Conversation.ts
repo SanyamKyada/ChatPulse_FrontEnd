@@ -35,8 +35,17 @@ export interface ConversationApiResponse {
   conversationType: number;
   lastMessage: LastMessage;
 }
-
 export type RecentChatAPIResponse = ConversationApiResponse[];
+
+export interface ConversationApiResponse_Partial {
+  conversationId: number;
+  friendRequestId: number;
+  numberOfUnseenMessages: number;
+  contact: Partial<Contact>;
+  conversationType: number;
+  lastMessage: Partial<LastMessage>;
+}
+// export type RecentChatAPIResponse_Partial = ConversationApiResponse_Partial[];
 
 //   interface Message {
 //     messageId: 1,

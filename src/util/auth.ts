@@ -17,3 +17,11 @@ export function updateAvailabilityStatus(statusId) {
     JSON.stringify({ ...user, availabilityStatus: statusId })
   );
 }
+
+export function updateProfileImage(imageUrl: string) {
+  const user = getUser();
+  localStorage.setItem(
+    "user",
+    JSON.stringify({ ...user, profileImage: imageUrl })
+  );
+}

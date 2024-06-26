@@ -1,113 +1,35 @@
 import React, { useEffect, useState } from "react";
 import RecentChats from "./RecentChats";
 import ConversationMain from "./Conversation/ConversationMain";
-import axios from "axios";
 import {
   ConversationApiResponse,
   RecentChatAPIResponse,
 } from "../types/Conversation";
-import { RecentChatGroups } from "../types/RecentChats";
-import { getGroupTitleFromDate } from "../util/datetime";
 import {
   getHubConnection,
   handleContactAvailabilityStatusChange,
+  handleContactProfileImageChanged,
   handleContactStatusChange,
   handleReceiveFriendRequest,
 } from "../services/signalR/SignalRService";
 import { isLoggedIn } from "../services/AuthService";
 import { PersonToInvite } from "../types/FriendRequest";
 import {
-  RECEIVE_AVAILABILITY_STATUS_CHANGED,
   RECEIVE_FRIEND_REQUEST_MESSAGE,
   RECEIVE_MESSAGE,
 } from "../services/signalR/constants";
 import InvitationChatWindow from "./invitation/InvitationChatWindow";
 import { ConversationApi } from "../axios";
 import { getUserId } from "../util/auth";
-
-const CONTACT_IMAGE =
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
-
-const groupConversationsByTimestamp = (
-  conversations: RecentChatAPIResponse
-) => {
-  const sortedConversations = conversations.sort((a, b) => {
-    const timestampA = new Date(a.lastMessage.timestamp);
-    const timestampB = new Date(b.lastMessage.timestamp);
-    return timestampB.getTime() - timestampA.getTime();
-  });
-  return sortedConversations.reduce(
-    (groups: RecentChatGroups, conversation) => {
-      const groupKey = getGroupTitleFromDate(
-        conversation.lastMessage.timestamp
-      );
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-      groups[groupKey].push({
-        conversationId: conversation.conversationId,
-        friendRequestId: conversation.friendRequestId,
-        personImageURL: CONTACT_IMAGE,
-        personName: conversation.contact.name,
-        contactId: conversation.contact.contactId,
-        lastMessage: conversation.lastMessage.content,
-        lastMessageRecivedAt: new Date(
-          conversation.lastMessage.timestamp
-        ).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        noOfUnseenMessages: conversation.numberOfUnseenMessages,
-        isOnline: conversation.contact.isOnline,
-        lastSeenTimestamp: conversation.contact.lastSeenTimestamp,
-        isWave: conversation.lastMessage.isWave,
-        availabilityStatus: conversation.contact.availabilityStatus,
-      });
-      return groups;
-    },
-    {}
-  );
-};
-
-const getPersonDetails = (
-  recentChats: RecentChatAPIResponse,
-  conversationId: number | undefined,
-  friendRequestId: number | undefined,
-  personToInviteDetails: PersonToInvite
-) => {
-  const activeConversation = recentChats.find(
-    (chat) =>
-      chat.conversationId === conversationId ||
-      chat.friendRequestId === friendRequestId
-  );
-  return activeConversation
-    ? {
-        contactId: activeConversation.contact.contactId,
-        contactName: activeConversation.contact.name,
-        contactOnlineStatus: activeConversation.contact.isOnline,
-        lastSeenTimestamp: activeConversation.contact.lastSeenTimestamp,
-        profileImage: activeConversation.contact.profileImage,
-        availabilityStatus: activeConversation.contact.availabilityStatus,
-      }
-    : {
-        contactId: personToInviteDetails.userId,
-        contactName: personToInviteDetails.name,
-        contactOnlineStatus: personToInviteDetails.isOnline,
-        lastSeenTimestamp: personToInviteDetails.lastSeenTimestamp,
-        profileImage: personToInviteDetails.profileImage,
-        availabilityStatus: personToInviteDetails.availabilityStatus,
-      };
-};
+import { conversationHelper } from "../util/conversation-helper";
 
 const Content: React.FC = () => {
   const [conversationId, setConversationId] = useState<number | undefined>(
     undefined
   );
-
   const [recentChats, setRecentChats] = useState<RecentChatAPIResponse>([]);
-
-  const recentChatGroups = groupConversationsByTimestamp(recentChats);
-
+  const recentChatGroups =
+    conversationHelper.groupConversationsByTimestamp(recentChats);
   const [friendRequestId, setFriendRequestId] = useState<number | undefined>(
     undefined
   );
@@ -132,24 +54,18 @@ const Content: React.FC = () => {
     if (isLoggedIn()) {
       handleContactStatusChange((userId, isOnline) => {
         setRecentChats((prevChats: RecentChatAPIResponse) => {
-          const conversationIndex = prevChats.findIndex(
-            (x) => x.contact.contactId == userId
+          return conversationHelper.updateChatState(
+            prevChats,
+            userId,
+            undefined,
+            undefined,
+            {
+              contact: {
+                isOnline,
+                lastSeenTimestamp: new Date().toLocaleString(),
+              },
+            }
           );
-          if (conversationIndex !== -1) {
-            const updatedConversation = {
-              ...prevChats[conversationIndex],
-            };
-
-            updatedConversation.contact.isOnline = isOnline;
-            updatedConversation.contact.lastSeenTimestamp =
-              new Date().toLocaleString();
-
-            const updatedChats = [...prevChats];
-            updatedChats[conversationIndex] = updatedConversation;
-            return updatedChats;
-          }
-
-          return prevChats;
         });
       });
 
@@ -184,22 +100,33 @@ const Content: React.FC = () => {
       handleContactAvailabilityStatusChange(
         (userId: string, status: number) => {
           setRecentChats((prevChats: RecentChatAPIResponse) => {
-            const conversationIndex = prevChats.findIndex(
-              (x) => x.contact.contactId == userId
+            return conversationHelper.updateChatState(
+              prevChats,
+              userId,
+              undefined,
+              undefined,
+              {
+                contact: { availabilityStatus: status },
+              }
             );
-            if (conversationIndex !== -1) {
-              const updatedConversation = {
-                ...prevChats[conversationIndex],
-              };
+          });
+        }
+      );
 
-              updatedConversation.contact.availabilityStatus = status;
-
-              const updatedChats = [...prevChats];
-              updatedChats[conversationIndex] = updatedConversation;
-              return updatedChats;
-            }
-
-            return prevChats;
+      handleContactProfileImageChanged(
+        (userId: string, profileImage: string) => {
+          setRecentChats((prevChats: RecentChatAPIResponse) => {
+            return conversationHelper.updateChatState(
+              prevChats,
+              userId,
+              undefined,
+              undefined,
+              {
+                contact: {
+                  profileImage: profileImage,
+                },
+              }
+            );
           });
         }
       );
@@ -255,24 +182,18 @@ const Content: React.FC = () => {
     shouldIncrease: boolean
   ) => {
     setRecentChats((prevChats: RecentChatAPIResponse) => {
-      const conversationIndex = prevChats.findIndex(
-        (x) => x.contact.contactId == senderUserId
+      return conversationHelper.updateChatState(
+        prevChats,
+        senderUserId,
+        undefined,
+        undefined,
+        {
+          numberOfUnseenMessages: shouldIncrease
+            ? prevChats.find((chat) => chat.contact.contactId === senderUserId)
+                ?.numberOfUnseenMessages + 1
+            : 0,
+        }
       );
-      if (conversationIndex !== -1) {
-        const updatedConversation = {
-          ...prevChats[conversationIndex],
-        };
-
-        updatedConversation.numberOfUnseenMessages = shouldIncrease
-          ? updatedConversation?.numberOfUnseenMessages + 1
-          : 0;
-
-        const updatedChats = [...prevChats];
-        updatedChats[conversationIndex] = updatedConversation;
-        return updatedChats;
-      }
-
-      return prevChats;
     });
   };
 
@@ -282,23 +203,18 @@ const Content: React.FC = () => {
     senderUserId: string | null
   ): void => {
     setRecentChats((prevChats: RecentChatAPIResponse) => {
-      const conversationIndex = isMessageReceived
-        ? prevChats.findIndex((x) => x.contact.contactId == senderUserId)
-        : prevChats.findIndex((x) => x.conversationId == conversationId);
-      if (conversationIndex !== -1) {
-        const updatedConversation = {
-          ...prevChats[conversationIndex],
-        };
-
-        updatedConversation.lastMessage.content = message;
-        updatedConversation.lastMessage.timestamp = new Date().toISOString();
-
-        const updatedChats = [...prevChats];
-        updatedChats[conversationIndex] = updatedConversation;
-        return updatedChats;
-      }
-
-      return prevChats;
+      return conversationHelper.updateChatState(
+        prevChats,
+        isMessageReceived && senderUserId,
+        !isMessageReceived && conversationId,
+        undefined,
+        {
+          lastMessage: {
+            content: message,
+            timestamp: new Date().toISOString(),
+          },
+        }
+      );
     });
   };
 
@@ -340,29 +256,22 @@ const Content: React.FC = () => {
     isReqAcceptedByMe: boolean = false
   ) => {
     setRecentChats((prevChats: RecentChatAPIResponse) => {
-      const conversationIndex = prevChats.findIndex(
-        (x) => x.friendRequestId == friendReqId
+      return conversationHelper.updateChatState(
+        prevChats,
+        undefined,
+        undefined,
+        friendReqId,
+        {
+          conversationId: convoId,
+          friendRequestId: null,
+        }
       );
-      if (conversationIndex !== -1) {
-        const updatedConversation = {
-          ...prevChats[conversationIndex],
-        };
-
-        updatedConversation.conversationId = convoId;
-        updatedConversation.friendRequestId = null;
-        const updatedChats = [...prevChats];
-        updatedChats[conversationIndex] = updatedConversation;
-
-        if (
-          isReqAcceptedByMe ||
-          (!conversationId && friendRequestId == friendReqId)
-        )
-          setConversationId(convoId);
-        return updatedChats;
-      }
-
-      return prevChats;
     });
+    if (
+      isReqAcceptedByMe ||
+      (!conversationId && friendRequestId == friendReqId)
+    )
+      setConversationId(convoId);
   };
 
   const handleBackNavigationFromInviteBox = () => {
@@ -387,7 +296,7 @@ const Content: React.FC = () => {
     setPersonToInviteDetails({} as PersonToInvite);
   };
 
-  const personDetails = getPersonDetails(
+  const personDetails = conversationHelper.getPersonDetails(
     recentChats,
     conversationId,
     friendRequestId,

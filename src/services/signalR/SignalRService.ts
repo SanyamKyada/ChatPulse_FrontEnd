@@ -13,6 +13,8 @@ import {
   USER_STATUS_CHANGED,
   SEND_AVAILABILITY_STATUS_CHANGED,
   RECEIVE_AVAILABILITY_STATUS_CHANGED,
+  SEND_CONTACT_PROFILE_IMAGE_CHANGED,
+  RECEIVE_CONTACT_PROFILE_IMAGE_CHANGED,
 } from "./constants";
 
 const hubEndpoint = import.meta.env.VITE_HUB_URL;
@@ -192,6 +194,17 @@ const sendFriendRequestAccepted = (
   );
 };
 
+const sendContactProfileImageChanged = (profileImage: string) => {
+  return invokeHubMethod(SEND_CONTACT_PROFILE_IMAGE_CHANGED, profileImage);
+};
+
+const handleContactProfileImageChanged = async (
+  callback: (userId: string, profileImage: string) => void
+) => {
+  const hubConnection = await getHubConnection();
+  hubConnection?.on(RECEIVE_CONTACT_PROFILE_IMAGE_CHANGED, callback);
+};
+
 // export const handleReceiveFriendRequestAccepted = (callback: (friendRequestId: number, conversationId: number) => void) => {
 //   const hubConnection = getHubConnection();
 //   hubConnection?.on(RECEIVE_FRIEND_REQUEST_ACCEPTED, callback);
@@ -211,4 +224,6 @@ export {
   handleReceiveFriendRequestMessage,
   sendFriendRequestMessage,
   sendFriendRequestAccepted,
+  sendContactProfileImageChanged,
+  handleContactProfileImageChanged,
 };

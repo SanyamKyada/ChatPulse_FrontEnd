@@ -1,16 +1,9 @@
-import React, { FC, useEffect, useState } from "react";
+import React, { FC, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
 import Loader from "../ui/Loader";
-import CryptoJS from "crypto-js";
 import { AccountApi } from "../axios";
-import {
-  LoginCredentials,
-  LoginResponse,
-  RegisterCredentials,
-  RegisterResponse,
-} from "../types/Account";
-const aesKey = import.meta.env.VITE_AES_KEY;
+import { RegisterCredentials, RegisterResponse } from "../types/Account";
 
 const SignUp: FC = () => {
   const [userName, setUserName] = useState<string>("");

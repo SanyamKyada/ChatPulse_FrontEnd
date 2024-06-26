@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { getUser } from "../services/AuthService";
-import { UserApi } from "../axios";
-import { getUserId, updateAvailabilityStatus } from "../util/auth";
-import { notifyAvailabilityStatusToContacts } from "../services/signalR/SignalRService";
+import { getUser } from "../../services/AuthService";
+import { UserApi } from "../../axios";
+import { getUserId, updateAvailabilityStatus } from "../../util/auth";
+import { notifyAvailabilityStatusToContacts } from "../../services/signalR/SignalRService";
+import SidebarProfileImage from "./SidebarProfileImage";
 
 const status = ["Active", "Away", "Do not disturb", "Invisible"];
 
@@ -51,11 +52,7 @@ const SidebarProfile: React.FC<SidebarProfileProps> = ({ handleLogout }) => {
       <div className="profile-body">
         <ul className="user-details">
           <li>
-            <button>
-              <div>
-                <i className="ri-camera-line"></i>
-              </div>
-            </button>
+            <SidebarProfileImage />
           </li>
           <li>
             <div>

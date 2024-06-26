@@ -12,3 +12,7 @@ export const RECEIVE_FRIEND_REQUEST_ACCEPTED = "ReceiveFriendRequestAccepted";
 export const SEND_AVAILABILITY_STATUS_CHANGED = "SendAvailabilityStatusChanged";
 export const RECEIVE_AVAILABILITY_STATUS_CHANGED =
   "ReceiveAvailabilityStatusChanged";
+export const SEND_CONTACT_PROFILE_IMAGE_CHANGED =
+  "SendContactProfileImageChanged";
+export const RECEIVE_CONTACT_PROFILE_IMAGE_CHANGED =
+  "ReceiveContactProfileImageChanged";

@@ -128,7 +128,6 @@ const InvitationChatWindow: React.FC<InvitationChatWindowProps> = ({
 
     const initializeHandlers = async () => {
       hubConnection = await getHubConnection();
-      debugger;
       hubConnection.on(RECEIVE_FRIEND_REQUEST_MESSAGE, receiveMessageHandler);
       hubConnection.on(
         RECEIVE_FRIEND_REQUEST_ACCEPTED,

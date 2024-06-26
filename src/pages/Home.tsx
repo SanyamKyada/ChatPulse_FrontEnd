@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Content from "../components/Content";
 import { useNavigate } from "react-router";
 import { startConnection } from "../services/signalR/SignalRService";
-import Sidebar from "../ui/Sidebar";
+import Sidebar from "../components/Sidebar/Sidebar";
 import {
   refreshAccessToken,
   decodeToken,

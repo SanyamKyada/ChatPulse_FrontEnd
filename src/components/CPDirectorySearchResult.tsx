@@ -1,5 +1,6 @@
 import React from "react";
 import { DirectorySearchResult, PersonToInvite } from "../types/FriendRequest";
+const baseImagesUrl = import.meta.env.VITE_IMAGES_URL;
 
 const CONTACT_IMAGE =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60";
@@ -18,7 +19,11 @@ const CPDirectorySearchResult: React.FC<{
           <a href="#" id={`recentchat-${person.userId}`}>
             <img
               className="content-message-image"
-              src={CONTACT_IMAGE}
+              src={
+                person.profileImage
+                  ? `${baseImagesUrl}/${person.profileImage}`
+                  : CONTACT_IMAGE
+              }
               alt="Person image"
             />
             <span className="content-message-info">

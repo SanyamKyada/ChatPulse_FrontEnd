@@ -8,6 +8,9 @@ import CPDirectorySearchResult from "../components/CPDirectorySearchResult";
 import { getUserId } from "../util/auth";
 import { UserApi } from "../axios";
 import { getUser } from "../services/AuthService";
+const baseImagesUrl = import.meta.env.VITE_IMAGES_URL;
+import { useSelector } from "react-redux";
+import { RootState } from "../types/redux";
 
 const RecentChats: React.FC<{
   recentChatGroups: RecentChatGroups;
@@ -25,6 +28,10 @@ const RecentChats: React.FC<{
   const cancleTokenRef = useRef<CancelTokenSource>();
   const [chatPulseDirectory, setChatPulseDirectory] =
     useState<DirectorySearchResult>([]);
+
+  const userProfileImage = useSelector(
+    (state: RootState) => state.user.profileImage
+  );
 
   let chatsDictionary: RecentChatGroups = searchQuery
     ? filterContactsByName(recentChatGroups, searchQuery)
@@ -102,7 +109,11 @@ const RecentChats: React.FC<{
           <div className="conversation-user">
             <img
               className="conversation-user-image"
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60"
+              src={
+                userProfileImage
+                  ? `${baseImagesUrl}/${userProfileImage}`
+                  : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60`
+              }
               alt=""
             />
             <div>

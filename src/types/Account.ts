@@ -5,6 +5,7 @@ export interface LoginResponse {
   refreshToken: string;
   availabilityStatus: number;
   email: string;
+  profileImage: string | null;
 }
 
 export interface RegisterResponse {

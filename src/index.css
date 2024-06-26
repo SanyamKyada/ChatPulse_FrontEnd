@@ -362,6 +362,8 @@ body {
   border: none;
   background: #c8b5db;
   cursor: pointer;
+  position: relative;
+  background-size: cover;
 }
 .sidebar-user-profile
   .profile-body
@@ -370,6 +372,63 @@ body {
   > button
   i.ri-camera-line {
   color: #7f00ff;
+}
+.sidebar-user-profile .profile-body div.icon-edit {
+  position: absolute;
+  background: #e1e1e2;
+  padding: 0px 2px;
+  border-radius: 50%;
+  right: 0;
+  bottom: 0;
+}
+.sidebar-user-profile .profile-body div.icon-edit i {
+  font-size: 16px;
+}
+.sidebar-user-profile
+  .profile-body
+  ul.user-details
+  li:first-child
+  > button
+  span.water-loader {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 48px;
+  height: 48px;
+  display: inline-block;
+  /* position: relative; */
+}
+
+.sidebar-user-profile
+  .profile-body
+  ul.user-details
+  li:first-child
+  > button
+  span.water-loader::after,
+.sidebar-user-profile
+  .profile-body
+  ul.user-details
+  li:first-child
+  > button
+  span.water-loader::before {
+  content: "";
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid #7f00ff;
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation: animloader 2s linear infinite;
+}
+.sidebar-user-profile
+  .profile-body
+  ul.user-details
+  li:first-child
+  > button
+  span.water-loader::after {
+  animation-delay: 1s;
 }
 
 .sidebar-user-profile .profile-body ul.user-details li:nth-child(1) {
@@ -1236,5 +1295,16 @@ li.status-item > span.icon.status-4 {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes animloader {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
   }
 }

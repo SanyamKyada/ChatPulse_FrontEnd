@@ -35,4 +35,14 @@ export class User {
     });
     return response;
   }
+
+  async UploadProfileImage(userId: string, formData): Promise<any> {
+    const url = `user/${userId}/image-upload`;
+    const response: any = await AuthorizedAPIService.post(url, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response;
+  }
 }

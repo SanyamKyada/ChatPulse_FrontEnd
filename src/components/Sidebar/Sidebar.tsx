@@ -5,10 +5,18 @@ import React, {
   useLayoutEffect,
 } from "react";
 import { useNavigate } from "react-router";
-import SidebarProfile from "../components/SidebarProfile";
+import SidebarProfile from "./SidebarProfile";
+import { getUser } from "../../services/AuthService";
+import { RootState } from "../../types/redux";
+const baseImagesUrl = import.meta.env.VITE_IMAGES_URL;
+import { useSelector } from "react-redux";
 
 const Sidebar: React.FC = () => {
   const [isProfileActive, setProfileActive] = useState(false);
+
+  const userProfileImage = useSelector(
+    (state: RootState) => state.user.profileImage
+  );
 
   const toggleProfile = () => {
     setProfileActive(!isProfileActive);
@@ -85,7 +93,11 @@ const Sidebar: React.FC = () => {
             onClick={toggleProfile}
           >
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60"
+              src={
+                userProfileImage
+                  ? `${baseImagesUrl}/${userProfileImage}`
+                  : `https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8cGVvcGxlfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60`
+              }
               alt=""
             />
           </button>

@@ -1,13 +1,12 @@
 import React, { FC, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-// import Loader from "../components/Loader";
 import "./Login.css";
 import Loader from "../ui/Loader";
-import CryptoJS from "crypto-js";
 import { AccountApi } from "../axios";
 import { LoginCredentials, LoginResponse } from "../types/Account";
 import { stopHubConnection } from "../services/signalR/SignalRService";
-const aesKey = import.meta.env.VITE_AES_KEY;
+import { useDispatch } from "react-redux";
+import { userActions } from "../store/slices/user-slice";
 
 const Login: FC = () => {
   const [userName, setUserName] = useState<string>("");
@@ -15,6 +14,7 @@ const Login: FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     localStorage.clear();
@@ -36,7 +36,9 @@ const Login: FC = () => {
           throw new Error("JWT token not found in response");
         }
 
+        dispatch(userActions.updateProfileImage(userDetails.profileImage));
         localStorage.setItem("user", JSON.stringify(userDetails));
+
         navigate("/");
       }
       setIsLoading(false);
